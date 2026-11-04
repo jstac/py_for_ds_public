@@ -1,0 +1,30 @@
+format: jb-book
+root: intro
+parts:
+- caption: Getting Started
+  numbered: true
+  chapters:
+  - file: overview
+  - file: python_ai
+  - file: toolkit
+  - file: working_with_data
+- caption: Distributions and Estimation
+  numbered: true
+  chapters:
+  - file: prob_dist
+  - file: observed_distributions
+  - file: bivariate_dist
+  - file: mle_intro
+  - file: bayes_intro
+- caption: Prediction
+  numbered: true
+  chapters:
+  - file: prediction
+  - file: classification_forecasting
+- caption: Inequality, Mobility and Networks
+  numbered: true
+  chapters:
+  - file: heavy_tails
+  - file: markov_chains
+  - file: networks
+  - file: wealth_tax

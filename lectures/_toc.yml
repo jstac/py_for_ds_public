@@ -28,3 +28,6 @@ parts:
   - file: markov_chains
   - file: networks
   - file: wealth_tax
+- caption: Other
+  chapters:
+  - file: zreferences

@@ -9,6 +9,5 @@ total GDP and two expenditure shares for seven countries in the year 2000.
 - **Caveat:** the values match no downloadable release of the Penn World Tables, so they
   are for illustration only.
 
-`pandas_vs_rest.png`, `pandas_share_prices.png` and `pandas_indices_pctchange.png` are
-copied from `lectures/_static/lecture_specific/pandas/` in
+`pandas_share_prices.png` and `pandas_indices_pctchange.png` are copied from `lectures/_static/lecture_specific/pandas/` in
 QuantEcon/lecture-python-programming.

@@ -27,16 +27,13 @@ In addition to what’s in Anaconda, this lecture will need the following librar
 
 ## Overview
 
-[Pandas](https://pandas.pydata.org/) is a package of fast, efficient data analysis tools for Python.
+[pandas](https://pandas.pydata.org/) is the standard library for working with tables of data in Python.
 
-Its popularity has surged in recent years, coincident with the rise
-of fields such as data science and machine learning.
+It is not particularly fast or efficient, but it is everywhere.
 
-Here's a popularity comparison over time against Matlab and STATA courtesy of Stack Overflow Trends
+AI tools are trained on masses of pandas code, and most of what you do with AI and data in Python will involve substantial amounts of it.
 
-```{figure} /_static/lecture_specific/working_with_data/pandas_vs_rest.png
-:scale: 100
-```
+So we need to understand the basics.
 
 Just as [NumPy](https://numpy.org/) provides the basic array data type plus core array operations, pandas
 
@@ -48,21 +45,27 @@ Just as [NumPy](https://numpy.org/) provides the basic array data type plus core
     * sorting, grouping, re-ordering and general data munging [^mung]
     * dealing with missing values, etc., etc.
 
-More sophisticated statistical functionality is left to other packages, such
-as [statsmodels](https://www.statsmodels.org/) and [scikit-learn](https://scikit-learn.org/), which are built on top of pandas.
+```{note}
+pandas does not contain sophisticated statistical routines.
 
-This lecture will provide a basic introduction to pandas.
+Rather, it is a tool for simple data analysis and a foundation for many other packages that work with pandas DataFrames, such as [statsmodels](https://www.statsmodels.org/) and [scikit-learn](https://scikit-learn.org/).
+```
 
-Throughout the lecture, we will assume that the following imports have taken
-place
+This lecture covers the basics.
+
+We use the following imports.
 
 ```{code-cell} ipython3
-import os
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import requests
+from matplotlib.patches import Rectangle
+```
+
+## Series
+
+```{index} single: Pandas; Series
 ```
 
 Two important data types defined by pandas are  `Series` and `DataFrame`.
@@ -71,30 +74,92 @@ You can think of a `Series` as a "column" of data, such as a collection of obser
 
 A `DataFrame` is a two-dimensional object for storing related columns of data.
 
-## Series
-
-```{index} single: Pandas; Series
-```
-
 Let's start with Series.
 
+We begin by creating a series from a Python dictionary.
 
-We begin by creating a series of four random observations
+The keys are the ticker symbols of four listed companies, and the values are made-up daily returns on their shares, in percent.
 
 ```{code-cell} ipython3
-rng = np.random.default_rng()
-s = pd.Series(rng.standard_normal(4), name='daily returns')
+returns = {'AMZN': 1.2, 'AAPL': -0.7, 'MSFT': 0.4, 'GOOG': -1.5}
+s = pd.Series(returns, name='daily returns')
 s
 ```
 
-Here you can imagine the indices `0, 1, 2, 3` as indexing four listed
-companies, and the values being daily returns on their shares.
+The keys have become the index of the series.
 
-Pandas `Series` are built on top of NumPy arrays and support many similar
-operations
+Let's compare this with a NumPy array containing the same numbers.
 
 ```{code-cell} ipython3
-s * 100
+a = s.to_numpy()
+a
+```
+
+The figure below shows the two side by side.
+
+```{code-cell} ipython3
+---
+mystnb:
+  image:
+    width: 60%
+  figure:
+    caption: A NumPy array and a pandas Series
+    name: array_vs_series
+tags: [hide-input]
+---
+value_color, index_color = '#cde2fb', '#d3f0e4'
+edge_color, muted_color = '#7a8794', '#5f6b76'
+n = len(s)
+values = [f'{x:.1f}' for x in s]
+
+
+def draw_cells(ax, x, width, entries, color, header):
+    "Draw a column of cells starting at x, with a header above it."
+    for i, entry in enumerate(entries):
+        ax.add_patch(Rectangle((x, n - 1 - i), width, 1, facecolor=color,
+                               edgecolor=edge_color))
+        ax.text(x + width / 2, n - 0.5 - i, entry, ha='center', va='center')
+    ax.text(x + width / 2, n + 0.15, header, ha='center', color=muted_color)
+
+
+fig, ax = plt.subplots(figsize=(8, 3.4))
+
+# The array: positions are implicit, so they are not drawn as cells
+ax.text(1.5, n + 0.9, 'NumPy array', ha='center', weight='bold')
+for i in range(n):
+    ax.text(0.65, n - 0.5 - i, str(i), ha='center', va='center', color=muted_color)
+ax.text(0.65, n + 0.15, 'position', ha='center', color=muted_color)
+draw_cells(ax, 1.3, 1.7, values, value_color, 'value')
+
+# The series: the index is stored next to the values
+ax.text(6.75, n + 0.9, 'pandas Series', ha='center', weight='bold')
+draw_cells(ax, 4.6, 1.6, s.index, index_color, 'index')
+draw_cells(ax, 6.2, 2.7, values, value_color, s.name)
+
+ax.set_xlim(0, 9)
+ax.set_ylim(-0.1, n + 1.4)
+ax.set_aspect('equal')
+ax.axis('off')
+plt.show()
+```
+
+We find a number in the array by its position, whereas in the series we can also use its label.
+
+```{code-cell} ipython3
+print(a[0])
+```
+
+```{code-cell} ipython3
+print(s['AMZN'])
+```
+
+Pandas `Series` are built on top of NumPy arrays and support many similar
+operations.
+
+For example, we can convert the returns from percentages to fractions.
+
+```{code-cell} ipython3
+s / 100
 ```
 
 ```{code-cell} ipython3
@@ -103,28 +168,17 @@ np.abs(s)
 
 But `Series` provide more than NumPy arrays.
 
-Not only do they have some additional (statistically oriented) methods
+For one thing, they have some additional (statistically oriented) methods
 
 ```{code-cell} ipython3
 s.describe()
 ```
 
-But their indices are more flexible
-
-```{code-cell} ipython3
-s.index = ['AMZN', 'AAPL', 'MSFT', 'GOOG']
-s
-```
-
-Viewed in this way, `Series` are like fast, efficient Python dictionaries
+And because of the index, `Series` are like Python dictionaries
 (with the restriction that the items in the dictionary all have the same
 type---in this case, floats).
 
 In fact, you can use much of the same syntax as Python dictionaries
-
-```{code-cell} ipython3
-s['AMZN']
-```
 
 ```{code-cell} ipython3
 s['AMZN'] = 0
@@ -162,16 +216,11 @@ The dataset contains the following indicators
 | cg | Government Consumption Share of PPP Converted GDP Per Capita (%) |
 
 
-We'll read this in using the `pandas` function `read_csv`.
-
-The code uses the copy of the file stored with this book if it can find one, and otherwise downloads it.
+We'll read this in from a URL using the `pandas` function `read_csv`.
 
 ```{code-cell} ipython3
-filename = 'gdp_population_by_country_2000.csv'
-path = '_static/lecture_specific/working_with_data/' + filename
-url = 'https://github.com/QuantEcon/data-lectures/raw/main/lectures/' + filename
-
-df = pd.read_csv(path if os.path.exists(path) else url)
+url = 'https://github.com/QuantEcon/data-lectures/raw/main/lectures/gdp_population_by_country_2000.csv'
+df = pd.read_csv(url)
 type(df)
 ```
 
@@ -502,7 +551,7 @@ Code that runs without an error message can still give the wrong answer.
 Suppose that Argentina's population is missing, and that we fill the gap with the mean, just as we did for missing values above.
 
 ```{code-cell} ipython3
-raw = pd.read_csv(path if os.path.exists(path) else url)
+raw = pd.read_csv(url)
 raw.loc[raw['country'] == 'Argentina', 'POP'] = np.nan
 filled = raw.fillna(raw.iloc[:, 1:].mean())
 

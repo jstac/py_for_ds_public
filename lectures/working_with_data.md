@@ -495,6 +495,34 @@ ax.set_ylabel('GDP per capita', fontsize=12)
 plt.show()
 ```
 
+### Silent failures
+
+Code that runs without an error message can still give the wrong answer.
+
+Suppose that Argentina's population is missing, and that we fill the gap with the mean, just as we did for missing values above.
+
+```{code-cell} ipython3
+raw = pd.read_csv(path if os.path.exists(path) else url)
+raw.loc[raw['country'] == 'Argentina', 'POP'] = np.nan
+filled = raw.fillna(raw.iloc[:, 1:].mean())
+
+# tcgdp is in millions and POP is in thousands
+gdp_percap = filled['tcgdp'] * 1e3 / filled['POP']
+gdp_percap.index = filled['country']
+
+comparison = df[['GDP percap']].copy()
+comparison['with imputed population'] = gdp_percap
+comparison
+```
+
+Argentina's GDP per capita is now far too low, because India and the United States pull the mean population well above Argentina's true population.
+
+Nothing warned us: the code ran, the result looks like any other table, and no missing values remain to show that something was changed.
+
+An earlier version of this lecture made this mistake in its GDP per capita plot.
+
+Filling in a missing value is a modeling choice, and every number computed from that value inherits its error.
+
 ## On-Line Data Sources
 
 ```{index} single: Data Sources

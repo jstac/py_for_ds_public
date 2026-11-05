@@ -11,16 +11,7 @@ kernelspec:
   name: python3
 ---
 
-(pd)=
-```{raw} jupyter
-<div id="qe-notebook-header" align="right" style="text-align:right;">
-        <a href="https://quantecon.org/" title="quantecon.org">
-                <img style="width:250px;display:inline;" width="250px" src="https://assets.quantecon.org/img/qe-menubar-logo.svg" alt="QuantEcon">
-        </a>
-</div>
-```
-
-# {index}`Pandas <single: Pandas>`
+# Working with Data
 
 ```{index} single: Python; Pandas
 ```
@@ -43,7 +34,7 @@ of fields such as data science and machine learning.
 
 Here's a popularity comparison over time against Matlab and STATA courtesy of Stack Overflow Trends
 
-```{figure} /_static/lecture_specific/pandas/pandas_vs_rest.png
+```{figure} /_static/lecture_specific/working_with_data/pandas_vs_rest.png
 :scale: 100
 ```
 
@@ -66,6 +57,8 @@ Throughout the lecture, we will assume that the following imports have taken
 place
 
 ```{code-cell} ipython3
+import os
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -153,27 +146,36 @@ In essence, a `DataFrame` in pandas is analogous to a (highly optimized) Excel s
 
 Thus, it is a powerful tool for representing and analyzing data that are naturally organized into rows and columns, often with descriptive indexes for individual rows and individual columns.
 
-Let's look at an example that reads data from the CSV file `test_pwt.csv`, which is taken from the [Penn World Tables](https://www.rug.nl/ggdc/productivity/pwt/pwt-releases/pwt-7.0).
+Let's look at an example that reads data from the CSV file `gdp_population_by_country_2000.csv`.
+
+It holds data on seven countries in the year 2000, in the layout of the [Penn World Tables](https://www.rug.nl/ggdc/productivity/pwt/).
+
+The numbers are for illustration only, since they do not match any downloadable release of those tables.
 
 The dataset contains the following indicators 
 
 | Variable Name | Description |
 | :-: | :-: |
 | POP | Population (in thousands) |
-| XRAT | Exchange Rate to US Dollar |                     
 | tcgdp | Total PPP Converted GDP (in million international dollar) |
 | cc | Consumption Share of PPP Converted GDP Per Capita (%) |
 | cg | Government Consumption Share of PPP Converted GDP Per Capita (%) |
 
 
-We'll read this in from a URL using the `pandas` function `read_csv`.
+We'll read this in using the `pandas` function `read_csv`.
+
+The code uses the copy of the file stored with this book if it can find one, and otherwise downloads it.
 
 ```{code-cell} ipython3
-df = pd.read_csv('https://github.com/QuantEcon/data-lectures/raw/main/lectures/test_pwt.csv')
+filename = 'gdp_population_by_country_2000.csv'
+path = '_static/lecture_specific/working_with_data/' + filename
+url = 'https://github.com/QuantEcon/data-lectures/raw/main/lectures/' + filename
+
+df = pd.read_csv(path if os.path.exists(path) else url)
 type(df)
 ```
 
-Here's the content of `test_pwt.csv`
+Here's the content of the file
 
 ```{code-cell} ipython3
 df
@@ -266,7 +268,7 @@ When we only want to look at certain columns of a selected sub-dataframe, we can
 The first argument takes the condition, while the second argument takes a list of columns we want to return.
 
 ```{code-cell} ipython3
-df.loc[(df.cc + df.cg >= 80) & (df.POP <= 20000), ['country', 'year', 'POP']]
+df.loc[(df.cc + df.cg >= 80) & (df.POP <= 20000), ['country', 'POP']]
 ```
 
 **Application: Subsetting Dataframe**
@@ -303,7 +305,7 @@ This function can be some built-in functions like the `max` function, a `lambda`
 Here is an example using the `max` function
 
 ```{code-cell} ipython3
-df[['year', 'POP', 'XRAT', 'tcgdp', 'cc', 'cg']].apply(max)
+df[['POP', 'tcgdp', 'cc', 'cg']].apply(max)
 ```
 
 This line of code applies the `max` function to all selected columns.
@@ -328,7 +330,7 @@ We can use it together with `.loc[]` to do some more advanced selection.
 ```{code-cell} ipython3
 complexCondition = df.apply(
     lambda row: row.POP > 40000 if row.country in ['Argentina', 'India', 'South Africa'] else row.POP < 20000, 
-    axis=1), ['country', 'year', 'POP', 'XRAT', 'tcgdp']
+    axis=1), ['country', 'POP', 'tcgdp']
 ```
 
 `df.apply()` here returns a series of boolean values rows that satisfies the condition specified in the if-else statement.
@@ -370,8 +372,8 @@ def update_row(row):
     # modify POP
     row.POP = np.nan if row.POP<= 10000 else row.POP
 
-    # modify XRAT
-    row.XRAT = row.XRAT / 10
+    # modify tcgdp
+    row.tcgdp = row.tcgdp / 1000
     return row
 
 df.apply(update_row, axis=1)
@@ -391,7 +393,7 @@ Replacing missing values is an important step in data munging.
 Let's randomly insert some NaN values
 
 ```{code-cell} ipython3
-for idx in list(zip([0, 3, 5, 6], [3, 4, 6, 2])):
+for idx in list(zip([0, 3, 5, 6], [3, 4, 3, 4])):
     df.iloc[idx] = np.nan
 
 df
@@ -417,7 +419,7 @@ Pandas also provides us with convenient methods to replace missing values.
 For example, single imputation using variable means can be easily done in pandas
 
 ```{code-cell} ipython3
-df = df.fillna(df.iloc[:,2:8].mean())
+df = df.fillna(df.iloc[:, 1:].mean())
 df
 ```
 
@@ -436,7 +438,7 @@ df = df[['country', 'POP', 'tcgdp']]
 df
 ```
 
-Here the index `0, 1,..., 7` is redundant because we can use the country names as an index.
+Here the index `0, 1,..., 6` is redundant because we can use the country names as an index.
 
 To do this, we set the index to be the `country` variable in the dataframe
 
@@ -683,7 +685,7 @@ ticker = read_data(ticker_list)
 
 Complete the program to plot the result as a bar graph like this one:
 
-```{image} /_static/lecture_specific/pandas/pandas_share_prices.png
+```{image} /_static/lecture_specific/working_with_data/pandas_share_prices.png
 :scale: 80
 :align: center
 ```
@@ -750,7 +752,7 @@ indices_list = {'^GSPC': 'S&P 500',
 
 Complete the program to show summary statistics and plot the result as a time series graph like this one:
 
-```{image} /_static/lecture_specific/pandas/pandas_indices_pctchange.png
+```{image} /_static/lecture_specific/working_with_data/pandas_indices_pctchange.png
 :scale: 80
 :align: center
 ```

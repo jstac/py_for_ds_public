@@ -18,11 +18,18 @@ kernelspec:
 
 ## Outline
 
-In {doc}`prob_dist` we studied probability distributions, which are mathematical objects.
+In {doc}`prob_dist` we studied probability distributions, which are one component of probability theory.
 
 In this lecture we turn to observed data --- sets of numbers that we measure or collect.
 
-We discuss how to summarize and visualize such data, why a large sample tells us about the distribution behind it, and how to decide which probability distribution best describes a given data set.
+Sometimes we refer to observed data or measurements as "distributions".
+
+What is the connection between these observed distributions and theoretical probability distributions?
+
+In this lecture we attempt to answer this question. 
+
+Along the way, we discuss how to summarize and visualize such data, and how to
+determine which probability distribution best describes a given data set.
 
 In addition to what's in Anaconda, this lecture needs the following library:
 
@@ -41,13 +48,109 @@ import numpy as np
 import yfinance as yf
 import scipy.stats
 import seaborn as sns
-
-np.set_printoptions(legacy='1.25')   # print scalars as plain numbers
 ```
 
-Sometimes we refer to observed data or measurements as "distributions".
+We'll print scalars as plain numbers
 
-For example, let's say we observe the income of 10 people over a year:
+```{code-cell} ipython3
+np.set_printoptions(legacy='1.25')   
+```
+
+
+## Histograms
+
+With a new data set on a single variable, the first thing we usually want to do is look at it.
+
+The standard way is a [histogram](https://en.wikipedia.org/wiki/Histogram), which divides the data into bins and shows how many observations fall in each.
+
+Let's start with the sale prices of 2,930 houses sold in Ames, Iowa between 2006 and 2010, which come with a few characteristics of each house {cite}`decock2011ames`.
+
+```{code-cell} ipython3
+url = ('https://github.com/QuantEcon/data-lectures/raw/main/'
+       'lectures/ames_house_prices.csv')
+houses = pd.read_csv(url)
+price = houses['price']
+houses.head()
+```
+
+Here is a histogram of the sale prices.
+
+```{code-cell} ipython3
+---
+mystnb:
+  figure:
+    caption: Histogram of house prices
+    name: fig:price-hist
+---
+fig, ax = plt.subplots()
+ax.hist(price, bins=50, density=True)
+ax.set_xlabel('sale price (US$)')
+ax.set_ylabel('density')
+plt.show()
+```
+
+The data have a long right tail: a small number of houses sell for far more than the typical price.
+
+Data like this often look more symmetric after taking logarithms.
+
+```{code-cell} ipython3
+---
+mystnb:
+  figure:
+    caption: Histogram of log house prices
+    name: fig:log-price-hist
+---
+log_price = np.log(price)
+
+fig, ax = plt.subplots()
+ax.hist(log_price, bins=50, density=True)
+ax.set_xlabel('log of sale price')
+ax.set_ylabel('density')
+plt.show()
+```
+
+This histogram is far more symmetric.
+
+Our next example runs in the opposite direction.
+
+The next cell reads the number of deaths in Japan in 2023 at each single year of age, from the [World Population Prospects](https://population.un.org/wpp/) of the United Nations.
+
+```{code-cell} ipython3
+url = ('https://github.com/QuantEcon/data-lectures/raw/main/'
+       'lectures/japan_deaths_by_age.csv')
+deaths = pd.read_csv(url)
+deaths.tail()
+```
+
+Since the data arrive as counts at each age, we pass the counts to `hist` as weights, using one bin for each age.
+
+```{code-cell} ipython3
+---
+mystnb:
+  figure:
+    caption: Deaths in Japan by age, 2023
+    name: fig:deaths-hist
+---
+fig, ax = plt.subplots()
+ax.hist(deaths['age'], bins=np.arange(-0.5, 101.5),
+        weights=deaths['deaths_total'] / 1000)
+ax.set_xlabel('age at death')
+ax.set_ylabel('deaths (thousands)')
+plt.show()
+```
+
+Deaths cluster at high ages, with a long tail running down towards zero --- the mirror image of the house price data.
+
+The last bar is taller than its neighbors because it is recorded as "100 and over", so it counts every death above age 100, not just deaths at age 100.
+
+Checking for artifacts like this is an important part of looking at data.
+
+
+## Sample moments and quantiles
+
+Histograms show us the shape of a data set, and we often want to summarize that shape with a few numbers as well.
+
+To begin, let's say we observe the income of 10 people over a year:
 
 ```{code-cell} ipython3
 data = [['Hiroshi', 1200],
@@ -67,28 +170,27 @@ df
 
 In this situation, we might refer to the set of their incomes as the "income distribution."
 
-The terminology is confusing because this set is not a probability distribution --- it's just a collection of numbers.
+The terminology is confusing because this set is not a {doc}`probability distribution <prob_dist>` --- it's just a collection of numbers.
 
 However, as we will see, the two ideas are closely connected.
 
-## Sample moments and quantiles
+
+### Sample mean and variance
 
 We begin with numbers that summarize a data set.
-
-### Sample moments
 
 Suppose we have an observed distribution with values $\{x_1, \ldots, x_n\}$.
 
 The [sample mean](https://en.wikipedia.org/wiki/Sample_mean_and_covariance) of this distribution is defined as
 
 $$
-\bar x = \frac{1}{n} \sum_{i=1}^n x_i
+    \bar x = \frac{1}{n} \sum_{i=1}^n x_i
 $$
 
 The [sample variance](https://en.wikipedia.org/wiki/Variance#Sample_variance) is defined as
 
 $$
-s^2 = \frac{1}{n} \sum_{i=1}^n (x_i - \bar x)^2
+    s^2 = \frac{1}{n} \sum_{i=1}^n (x_i - \bar x)^2
 $$
 
 and the sample standard deviation $s$ is its square root.
@@ -102,11 +204,17 @@ income.mean(), income.var(), income.std()
 
 (pandas divides by $n-1$ rather than $n$ when computing the variance, so its answer differs slightly from the formula, and the difference is small when $n$ is large.)
 
-Each of these statistics is the sample counterpart of one of the population quantities defined in {doc}`prob_dist`: we replace the probability distribution by the observed data, weighting each observation equally.
+Notice that these sample moments have a clear connection to the population moments defined in {doc}`prob_dist`.
 
-The same idea extends to higher moments.
+They are the mean, variance, and standard deviation of a finite probability
+distribution that puts equal probability $1/n$ on each observed outcome $x_i$.
 
-The sample skewness and sample kurtosis are
+The sample moments discussed below also follow this pattern.
+
+
+### Higher sample moments
+
+The **sample skewness** and **sample kurtosis** are
 
 $$
 \hat S = \frac{1}{n} \sum_{i=1}^n \left( \frac{x_i - \bar x}{s} \right)^3
@@ -114,11 +222,11 @@ $$
 \hat K = \frac{1}{n} \sum_{i=1}^n \left( \frac{x_i - \bar x}{s} \right)^4
 $$
 
-and the sample excess kurtosis is $\hat K - 3$.
+The **sample excess kurtosis** is $\hat K - 3$.
 
 Recall from {doc}`prob_dist` that a normal distribution has skewness zero and excess kurtosis zero.
 
-This gives us a first, purely numerical, way to ask whether a data set looks normal.
+This gives us one way to ask whether a data set looks normal.
 
 Let's try it on the heights of US adult women, which we saw were well described by a normal distribution.
 
@@ -133,36 +241,23 @@ female = heights[heights['sex'] == 'female']['height_cm']
 scipy.stats.skew(female), scipy.stats.kurtosis(female)
 ```
 
-Both numbers are close to zero, which is consistent with what we saw in the figures.
+Both numbers are close to zero, which is consistent with the histograms in {doc}`prob_dist`.
 
-Now let's look at a data set that is far from normal.
-
-The next cell reads in the sale prices of 2,930 houses sold in Ames, Iowa between 2006 and 2010, along with a few characteristics of each house {cite}`decock2011ames`.
+Now let's compute the same statistics for the house prices.
 
 ```{code-cell} ipython3
-url = ('https://github.com/QuantEcon/data-lectures/raw/main/'
-       'lectures/ames_house_prices.csv')
-houses = pd.read_csv(url)
-houses.head()
-```
-
-Let's compute the same statistics for the sale prices.
-
-```{code-cell} ipython3
-price = houses['price']
 scipy.stats.skew(price), scipy.stats.kurtosis(price)
 ```
 
-The skewness is large and positive, telling us that the data has a long right tail --- a small number of houses sell for far more than the typical price.
+The skewness is large and positive, which is how it registers the long right tail we saw in the histogram.
 
 The excess kurtosis is also large, telling us that extreme values are much more common than they would be for a normal distribution.
 
 We saw exactly this combination in {doc}`prob_dist` when we looked at the lognormal distribution.
 
-That suggests taking logarithms.
+For the log prices, the numbers match the more symmetric histogram.
 
 ```{code-cell} ipython3
-log_price = np.log(price)
 scipy.stats.skew(log_price), scipy.stats.kurtosis(log_price)
 ```
 
@@ -170,18 +265,7 @@ The skewness is now almost exactly zero.
 
 In other words, the *logarithm* of the sale price looks far more symmetric than the sale price itself, as it would if prices were lognormal.
 
-Our last example runs in the opposite direction.
-
-The next cell reads the number of deaths in Japan in 2023 at each single year of age, from the [World Population Prospects](https://population.un.org/wpp/) of the United Nations.
-
-```{code-cell} ipython3
-url = ('https://github.com/QuantEcon/data-lectures/raw/main/'
-       'lectures/japan_deaths_by_age.csv')
-deaths = pd.read_csv(url)
-deaths.tail()
-```
-
-The data arrive as counts, so we expand them into a data set with one observation per death.
+For the deaths data, we first expand the counts into a data set with one observation per death.
 
 ```{code-cell} ipython3
 age_at_death = np.repeat(deaths['age'], deaths['deaths_total'])
@@ -192,9 +276,8 @@ len(age_at_death)
 scipy.stats.skew(age_at_death), scipy.stats.kurtosis(age_at_death)
 ```
 
-Now the skewness is large and *negative*.
+Now the skewness is large and *negative*, matching the long left tail in the histogram.
 
-Deaths cluster at high ages, with a long tail running down towards zero --- the mirror image of the house price data.
 
 ### Sample quantiles
 
@@ -286,73 +369,11 @@ So the "average" household is much wealthier than a typical one, and a policy di
 
 Similar gaps appear across countries, as this [ranking by average and median wealth](https://www.visualcapitalist.com/ranked-the-richest-countries-by-average-and-median-wealth/) shows.
 
-## Visualizing data
+## More ways to visualize data
 
-Summary statistics compress a data set down to a few numbers.
+Histograms are not the only way to look at a data set.
 
-Visualization goes the other way, showing us the whole shape of the data.
-
-### Histograms
-
-A [histogram](https://en.wikipedia.org/wiki/Histogram) divides the data into bins and shows how many observations fall in each.
-
-Here is a histogram of the Ames house prices.
-
-```{code-cell} ipython3
----
-mystnb:
-  figure:
-    caption: Histogram of house prices
-    name: fig:price-hist
----
-fig, ax = plt.subplots()
-ax.hist(price, bins=50, density=True)
-ax.set_xlabel('sale price (US$)')
-ax.set_ylabel('density')
-plt.show()
-```
-
-The long right tail that the skewness told us about is clearly visible.
-
-Let's compare this with the histogram of the log prices.
-
-```{code-cell} ipython3
----
-mystnb:
-  figure:
-    caption: Histogram of log house prices
-    name: fig:log-price-hist
----
-fig, ax = plt.subplots()
-ax.hist(log_price, bins=50, density=True)
-ax.set_xlabel('log of sale price')
-ax.set_ylabel('density')
-plt.show()
-```
-
-This histogram is far more symmetric, as the sample skewness led us to expect.
-
-Here is the age at death data, which we found to have negative skewness.
-
-```{code-cell} ipython3
----
-mystnb:
-  figure:
-    caption: Histogram of age at death
-    name: fig:age-hist
----
-fig, ax = plt.subplots()
-ax.hist(age_at_death, bins=101, density=True)
-ax.set_xlabel('age at death')
-ax.set_ylabel('density')
-plt.show()
-```
-
-The long tail now runs to the left, towards zero.
-
-The spike at the right-hand end is not a feature of mortality: the last age is recorded as "100 and over", so every death above age 100 is counted as 100.
-
-Checking for artifacts like this is an important part of looking at data.
+Here are four more, each suited to a different purpose.
 
 ### Empirical cumulative distribution functions
 

@@ -11,42 +11,39 @@ kernelspec:
   name: python3
 ---
 
-(bivariate_dist)=
-# Bivariate Distributions
+# Bivariate Distributions, Correlation and Simple Regression
 
 ```{index} single: Bivariate Distributions
 ```
 
 ## Outline
 
-The lectures {doc}`prob_dist`, {doc}`observed_distributions` and {doc}`fitting_distributions` all study a single variable at a time (e.g., a distribution of house prices).
+The lectures {doc}`prob_dist` and {doc}`observed_distributions` study a single variable at a time (e.g., a distribution of house prices).
 
-Often we are interested in more than one variable.
-
-In this situation, we typically wish to know how these variables relate to each other.
+Often we are interested in how two variables relate to each other.
 
 For example, do larger houses tend to sell for more?
 
-In this lecture we give a quick introduction to **bivariate distributions**: probability distributions over pairs of random variables.
+In this lecture we study joint distributions and correlation, and then fit a line through data using regression.
 
-We cover joint distributions and marginals, independence, covariance and correlation, some of
-the ways that joint distributions arise, and the bivariate normal distribution.
-
-We end with a preview of {doc}`simple_linear_regression`.
+We end with a warning about what such a line can and cannot tell us.
 
 We use the following imports:
 
 ```{code-cell} ipython3
+import os
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import scipy.stats
+from scipy.optimize import minimize
 import seaborn as sns
 
 np.set_printoptions(legacy='1.25')   # print scalars as plain numbers
 ```
 
-To motivate what follows, let's look at the sale prices and floor areas of the Ames houses that we studied in {doc}`observed_distributions` and {doc}`fitting_distributions` {cite}`decock2011ames`.
+To motivate what follows, let's look at the sale prices and floor areas of the Ames houses that we studied in {doc}`observed_distributions`.
 
 ```{code-cell} ipython3
 ---
@@ -69,35 +66,25 @@ ax.set_ylabel('sale price (US$)')
 plt.show()
 ```
 
-Each point is one house.
+Each point is one house, and larger houses clearly tend to sell for more.
 
-In {doc}`observed_distributions` we compared prices across four floor-area groups using box plots, and found that floor area is a good predictor of price.
+This is the kind of pattern that a joint distribution can describe.
 
-The scatter plot above shows the same fact more directly (without first dividing the data into groups).
+## Joint and marginal distributions
 
-This is the kind of pattern that a bivariate distribution can describe.
-
-## Joint distributions
-
-Let's begin with some theory and definitions.
-
-We start with the discrete case (sums) and then cover the density case (integrals).
+We start with the discrete case and then turn to densities.
 
 ### Discrete case
 
-Let's start with two discrete random variables $X$ and $Y$, taking values in finite sets $S_X$ and $S_Y$.
+Let $X$ and $Y$ be two discrete random variables, taking values in finite sets $S_X$ and $S_Y$.
 
-The **joint probability mass function** of $X$ and $Y$ is the function $p$ on $S_X \times S_Y$ with
+Their [joint distribution](https://en.wikipedia.org/wiki/Joint_probability_distribution) is described by the function
 
 $$
 p(x,y) = \mathbb P\{X = x, Y = y\}
 $$
 
-As with a single variable, the values of $p$ are nonnegative and sum to one, now over both variables:
-
-$$
-\sum_{x \in S_X} \sum_{y \in S_Y} p(x,y) = 1
-$$
+As with a single variable, the values of $p$ are nonnegative and sum to one, now over both variables.
 
 Let's build an example from the house price data.
 
@@ -112,30 +99,11 @@ joint.columns.name = 'y (price above mean)'
 joint
 ```
 
-Here each cell is the fraction of houses with that particular combination of $X$ and $Y$.
+Each cell is the fraction of houses with that combination of $X$ and $Y$.
 
-The four numbers in this table can be viewed as a joint PMF for $X$ and $Y$: they are nonnegative and sum to one.
+Around 48% of houses have both below-mean floor area and below-mean price.
 
-Let's visualize it as a heatmap, which makes the relative sizes of the four cells easier to compare than the raw numbers.
-
-```{code-cell} ipython3
----
-mystnb:
-  figure:
-    caption: Heatmap of the joint distribution
-    name: fig:bivariate-joint-heatmap
----
-fig, ax = plt.subplots()
-sns.heatmap(joint, annot=True, fmt='.2f', cmap='viridis', cbar=False, vmin=0, vmax=0.5, ax=ax)
-ax.invert_yaxis()  # so x increases upward, matching a standard scatter plot
-plt.show()
-```
-
-The (below, below) cell is clearly the largest: around 48% of houses have both below-mean floor area and below-mean price.
-
-Given a joint distribution, we can always recover the distribution of $X$ on its own, by summing (or integrating) out $Y$.
-
-In the discrete case,
+Given a joint distribution, we can recover the distribution of $X$ on its own by summing out $Y$:
 
 $$
 p_X(x) = \sum_{y \in S_Y} p(x,y)
@@ -143,47 +111,26 @@ $$
 
 and symmetrically for $p_Y$.
 
-We call $p_X$ and $p_Y$ the **marginal distributions** of $X$ and $Y$.
+We call $p_X$ and $p_Y$ the [marginal distributions](https://en.wikipedia.org/wiki/Marginal_distribution) of $X$ and $Y$.
 
-In our table above, the marginals are the row and column sums:
+In our table, the marginals are the row and column sums:
 
 ```{code-cell} ipython3
 p_X, p_Y = joint.sum(axis=1), joint.sum(axis=0)
 p_X, p_Y
 ```
 
-Neither marginal is close to 0.5: only around 45% of houses have above-mean floor area, and only around 38% sell for above-mean prices.
+Notice that the marginals alone do not tell us the whole story.
 
-This is the right skew we met in {doc}`observed_distributions` showing up again: a long right tail of large, expensive houses pulls the mean above the middle of the distribution, so *below* the mean covers more than half the sample.
+Knowing the fraction of houses with above-mean area and the fraction with above-mean price, separately, says nothing about whether the *same* houses tend to have both.
 
-Notice, though, that the marginals alone do not tell us the whole story.
-
-Knowing the fraction of houses with above-mean area and the fraction with above-mean price, separately, says nothing about whether the *same* houses tend to have both --- for that we need the joint distribution, not just the two marginals.
-
-Let's plot the two marginals side by side.
-
-```{code-cell} ipython3
----
-mystnb:
-  figure:
-    caption: The two marginal distributions
-    name: fig:bivariate-discrete-marginals
----
-fig, axes = plt.subplots(1, 2, figsize=(9, 4))
-axes[0].bar(['below mean', 'above mean'], p_X)
-axes[0].set_title('marginal of x (area)')
-axes[0].set_ylabel('probability')
-axes[1].bar(['below mean', 'above mean'], p_Y)
-axes[1].set_title('marginal of y (price)')
-axes[1].set_ylabel('probability')
-plt.show()
-```
+For that we need the joint distribution.
 
 ### Continuous case
 
-Some variables are continuous rather than discrete (e.g., area, price).
+Some variables are continuous rather than discrete.
 
-The continuous analog of the joint PMF is the **joint probability density function** $p(x,y)$, a nonnegative function on $\mathbb R^2$ with
+The continuous analog is the joint density $p(x,y)$, a nonnegative function on $\mathbb R^2$ with
 
 $$
 \int_{\mathbb R} \int_{\mathbb R} p(x,y) \, dx \, dy = 1
@@ -195,15 +142,17 @@ $$
 \mathbb P\{(X,Y) \in A\} = \iint_A p(x,y) \, dx \, dy
 $$
 
-This means that $\mathbb P\{(X,Y) \in A\}$ is equal to the volume of the
-three-dimensional space between $p(x,y)$ and $0$ over the two-dimensional region
-$A$.
+Marginal densities come from integrating out the other variable:
 
-Let's meet a specific and very useful example right away: the bivariate normal density.
+$$
+p_X(x) = \int_{-\infty}^\infty p(x,y) \, dy
+$$
 
-Just as the normal distribution is the workhorse univariate distribution, the **bivariate normal distribution** is the workhorse joint distribution.
+## The bivariate normal distribution
 
-It has five parameters: the two means $\mu_X, \mu_Y$, the two standard deviations $\sigma_X, \sigma_Y$, and the correlation $\rho \in (-1,1)$.
+Just as the normal distribution is the workhorse univariate distribution, the [bivariate normal distribution](https://en.wikipedia.org/wiki/Multivariate_normal_distribution) is the workhorse joint distribution.
+
+It has five parameters: the two means $\mu_X, \mu_Y$, the two standard deviations $\sigma_X, \sigma_Y$, and the correlation $\rho \in (-1,1)$, which we define below.
 
 Its density is
 
@@ -219,9 +168,7 @@ p(x,y) = \frac{1}{2\pi \sigma_X \sigma_Y \sqrt{1-\rho^2}}
 \right)
 $$
 
-It can be shown that, for this distribution, $\rho$ is exactly the correlation between $X$ and $Y$.
-
-SciPy provides this distribution as `scipy.stats.multivariate_normal`, which takes a mean and a covariance matrix (built here from $\sigma_X, \sigma_Y, \rho$).
+SciPy provides this distribution as `scipy.stats.multivariate_normal`, which takes a mean and a covariance matrix.
 
 ```{code-cell} ipython3
 def bivariate_normal(μ_x, μ_y, σ_x, σ_y, ρ):
@@ -230,7 +177,7 @@ def bivariate_normal(μ_x, μ_y, σ_x, σ_y, ρ):
     return scipy.stats.multivariate_normal([μ_x, μ_y], cov)
 ```
 
-Before looking at it from above, let's see the density as it really is: a surface over the $(x,y)$ plane.
+Here is the density as a surface over the $(x,y)$ plane.
 
 ```{code-cell} ipython3
 ---
@@ -238,6 +185,7 @@ mystnb:
   figure:
     caption: The bivariate normal density surface
     name: fig:bivariate-normal-surface
+tags: [hide-input]
 ---
 x_grid = np.linspace(-3, 3, 100)
 y_grid = np.linspace(-3, 3, 100)
@@ -255,11 +203,9 @@ ax.set_zlabel('density')
 plt.show()
 ```
 
-This is the same kind of bell-shaped hill as the univariate normal density, just built over a plane instead of a line, and tilted by the correlation $\rho$.
+This is the same kind of bell-shaped hill as the univariate normal density, built over a plane instead of a line.
 
-In practice it is much more convenient to look straight down at this hill and draw its contour lines, the way a topographic map shows the shape of a hill without drawing it in 3D.
-
-Let's do that for a few values of $\rho$.
+It is usually more convenient to look straight down at the hill and draw its contour lines, the way a topographic map does.
 
 ```{code-cell} ipython3
 ---
@@ -267,6 +213,7 @@ mystnb:
   figure:
     caption: Bivariate normal contours by correlation
     name: fig:bivariate-normal-contours
+tags: [hide-input]
 ---
 fig, axes = plt.subplots(1, 3, figsize=(12, 4), sharex=True, sharey=True)
 for ax, ρ in zip(axes, (-0.8, 0.0, 0.8)):
@@ -279,68 +226,23 @@ axes[0].set_ylabel('y')
 plt.show()
 ```
 
-When $\rho = 0$ the contours are circles.
+When $\rho = 0$ the contours are circles, and otherwise they are tilted ellipses.
 
-When $\rho \neq 0$ they become tilted ellipses, oriented along the line $y=x$ when $\rho > 0$ and $y=-x$ when $\rho < 0$.
+It can be shown that the marginal of $X$ is $N(\mu_X, \sigma_X^2)$ and the marginal of $Y$ is $N(\mu_Y, \sigma_Y^2)$.
 
-Let's now find the marginal distributions of $X$ and $Y$, the same way we did in the discrete case: by integrating the joint density over the other variable.
+Neither marginal depends on $\rho$: the correlation describes how $X$ and $Y$ move *together*, and that information is lost when we look at either variable alone.
 
-$$
-p_X(x) = \int_{-\infty}^\infty p(x,y) \, dy
-$$
+## Independence and correlation
 
-and symmetrically for $p_Y$.
-
-It can be shown that, for the bivariate normal, the marginal of $X$ is $N(\mu_X, \sigma_X^2)$ and the marginal of $Y$ is $N(\mu_Y, \sigma_Y^2)$ --- in other words, each variable is, on its own, just an ordinary univariate normal.
-
-Notice that neither marginal depends on $\rho$ at all: the correlation describes how $X$ and $Y$ move *together*, and that information is exactly what is lost when we look at either variable in isolation --- the same lesson the discrete example taught us above.
-
-```{code-cell} ipython3
----
-mystnb:
-  figure:
-    caption: Marginal densities of the bivariate normal
-    name: fig:bivariate-normal-marginals
----
-μ_x, σ_x = 0, 1
-μ_y, σ_y = 2, 0.6
-
-x_grid = np.linspace(μ_x - 4*σ_x, μ_x + 4*σ_x, 200)
-y_grid = np.linspace(μ_y - 4*σ_y, μ_y + 4*σ_y, 200)
-
-fig, axes = plt.subplots(1, 2, figsize=(9, 4))
-axes[0].plot(x_grid, scipy.stats.norm(μ_x, σ_x).pdf(x_grid))
-axes[0].set_title('marginal of x')
-axes[0].set_xlabel('x')
-axes[0].set_ylabel('density')
-axes[1].plot(y_grid, scipy.stats.norm(μ_y, σ_y).pdf(y_grid))
-axes[1].set_title('marginal of y')
-axes[1].set_xlabel('y')
-axes[1].set_ylabel('density')
-plt.show()
-```
-
-## Independence
-
-$X$ and $Y$ are called **independent** if the joint distribution factors into the product of the marginals:
+$X$ and $Y$ are [independent](https://en.wikipedia.org/wiki/Independence_(probability_theory)) if the joint distribution is the product of the marginals:
 
 $$
 p(x,y) = p_X(x) \, p_Y(y) \qquad \text{for all } x, y
 $$
 
-Independence means that learning the value of $X$ tells us nothing about $Y$, and vice versa.
+Independence means that learning the value of $X$ tells us nothing about $Y$.
 
-Let's check whether our discrete example is close to independent, by comparing the joint table with the table we would get if $X$ and $Y$ *were* independent, i.e. the product of the marginals.
-
-```{code-cell} ipython3
-independent_table = pd.DataFrame(np.outer(p_X, p_Y),
-                                  index=joint.index, columns=joint.columns)
-independent_table
-```
-
-Under independence, every cell would just be the product of the corresponding marginals --- for example, the (below, below) cell would be $0.55 \times 0.62 \approx 0.34$.
-
-Let's put the two tables side by side as heatmaps, which makes the difference much easier to see than comparing raw numbers.
+Let's compare our house table with the table we would get if $X$ and $Y$ were independent.
 
 ```{code-cell} ipython3
 ---
@@ -349,219 +251,132 @@ mystnb:
     caption: Actual joint versus independent joint
     name: fig:bivariate-independence-heatmap
 ---
+independent_table = pd.DataFrame(np.outer(p_X, p_Y),
+                                 index=joint.index, columns=joint.columns)
+
 fig, axes = plt.subplots(1, 2, figsize=(9, 4))
-sns.heatmap(joint, annot=True, fmt='.2f', cmap='viridis', cbar=False,
-            vmin=0, vmax=0.45, ax=axes[0])
-axes[0].set_title('actual joint')
-axes[0].invert_yaxis()
-sns.heatmap(independent_table, annot=True, fmt='.2f', cmap='viridis', cbar=False,
-            vmin=0, vmax=0.45, ax=axes[1])
-axes[1].set_title('if independent')
-axes[1].invert_yaxis()
+for ax, table, title in zip(axes, (joint, independent_table),
+                            ('actual joint', 'if independent')):
+    sns.heatmap(table, annot=True, fmt='.2f', cmap='viridis', cbar=False,
+                vmin=0, vmax=0.5, ax=ax)
+    ax.set_title(title)
+    ax.invert_yaxis()
 plt.show()
 ```
 
-The independent heatmap is not flat, but it is smooth: it simply reflects the marginals, with the (below, below) cell largest because both marginals favor "below".
+Around 48% of houses land in the (below, below) cell, well above the 34% that independence would predict.
 
-The actual heatmap looks quite different: around 48% of houses land in the (below, below) cell alone --- well above the 34% independence would predict --- and the off-diagonal cells are correspondingly emptier than independence implies.
-
-So $X$ and $Y$ are far from independent --- exactly as we would expect, since larger houses tend to be more expensive.
-
-## Covariance and correlation
+So $X$ and $Y$ are far from independent, as we would expect, since larger houses tend to be more expensive.
 
 Independence is an all-or-nothing property.
 
-To measure the *strength* and *direction* of dependence, we use the **covariance**
+To measure the strength and direction of dependence, we use the [covariance](https://en.wikipedia.org/wiki/Covariance)
 
 $$
 \mathrm{Cov}(X,Y) = \mathbb E \left[ (X - \mu_X)(Y - \mu_Y) \right]
 $$
 
-where $\mu_X = \mathbb E[X]$ and $\mu_Y = \mathbb E[Y]$.
-
-The covariance is positive when $X$ and $Y$ tend to be above their means together (and below their means together), and negative when one tends to be above its mean while the other is below.
+The covariance is positive when $X$ and $Y$ tend to be above their means together, and negative when one tends to be above its mean while the other is below.
 
 If $X$ and $Y$ are independent, then $\mathrm{Cov}(X,Y) = 0$.
 
 ```{note}
 The converse is false: zero covariance does not imply independence.
 
-It only rules out *linear* dependence.
-
-We will see an example of this below, in the discussion of the bivariate normal distribution.
+It only rules out *linear* dependence, as {ref}`bivariate_ex3` shows.
 ```
 
-The covariance is measured in the units of $X$ times the units of $Y$, which makes it hard to interpret on its own.
+The covariance is measured in the units of $X$ times the units of $Y$, which makes it hard to interpret.
 
-We therefore usually standardize it into the **correlation coefficient**
+We therefore usually standardize it into the [correlation coefficient](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient)
 
 $$
 \rho = \mathrm{Corr}(X,Y) = \frac{\mathrm{Cov}(X,Y)}{\sigma_X \sigma_Y}
 $$
 
-where $\sigma_X$ and $\sigma_Y$ are the standard deviations of $X$ and $Y$.
-
 Correlation is unit-free and always lies in $[-1, 1]$, with the extreme values attained only when $Y$ is an exact linear function of $X$.
 
-Let's compute it for our discrete house example, using `np.corrcoef`.
+For the bivariate normal, $\rho$ is exactly this correlation, and $\rho = 0$ implies independence, which is not true of distributions in general.
 
-Given two arrays, `np.corrcoef` returns their full $2 \times 2$ correlation matrix: ones down the diagonal (each variable is perfectly correlated with itself) and $\mathrm{Corr}(X,Y)$ in both off-diagonal entries.
+To estimate correlation from data $\{(x_i, y_i)\}$, we replace population quantities with sample ones, which gives the sample correlation
 
-We only need that one number, so we index with `[0, 1]` to pull out the correlation between $X$ and $Y$.
+$$
+r = \frac{1}{n} \sum_{i=1}^n
+    \left( \frac{x_i - \bar x}{s_x} \right)
+    \left( \frac{y_i - \bar y}{s_y} \right)
+$$
+
+where $s_x$ and $s_y$ are the sample standard deviations.
+
+The function `np.corrcoef` returns a matrix of correlations, and we use `[0, 1]` to pull out the one between its two arguments.
 
 ```{code-cell} ipython3
-np.corrcoef(X, Y)[0, 1]
+np.corrcoef(area, price)[0, 1]
 ```
 
-A correlation of around 0.57 between the above/below-mean indicators confirms what the table already showed us: floor area and price move together.
+## Building joint distributions
 
-## How joint distributions arise
+Why do two variables end up correlated?
 
-It is worth pausing to think about *why* two variables end up correlated.
+A very common mechanism is that $Y$ is built partly from $X$:
 
-Here are two simple and common mechanisms.
+$$
+Y = a X + b + W
+$$
 
-### Independent components
+where $W$ is noise, independent of $X$, with mean zero and standard deviation $\sigma_W$.
 
-The simplest case is no relationship at all: draw $X$ and $Y$ independently.
+Since $W$ is independent of $X$, we have $\mathrm{Cov}(X,Y) = a \sigma_X^2$ and $\mathbb V[Y] = a^2 \sigma_X^2 + \sigma_W^2$, so that
+
+$$
+\mathrm{Corr}(X,Y) = \frac{a \sigma_X}{\sqrt{a^2 \sigma_X^2 + \sigma_W^2}}
+$$
+
+The correlation is driven entirely by the relative size of the signal $a X$ and the noise $W$.
+
+Let's see this in a picture, fixing $a=1$ and $\sigma_X = 1$ and increasing $\sigma_W$.
 
 ```{code-cell} ipython3
 ---
 mystnb:
   figure:
-    caption: Two independent normal variables
-    name: fig:bivariate-independent
+    caption: Correlation falls as noise grows
+    name: fig:bivariate-signal-noise
 ---
 rng = np.random.default_rng(1234)
 N = 500
-x_indep = rng.standard_normal(N)
-y_indep = rng.standard_normal(N)
-
-fig, ax = plt.subplots()
-ax.scatter(x_indep, y_indep, alpha=0.5, s=10)
-ax.set_xlabel('x')
-ax.set_ylabel('y')
-ax.set_aspect('equal')
-plt.show()
-```
-
-There is no visible pattern: knowing $x$ tells us nothing about where $y$ will land.
-
-### A common building block
-
-A second and very common mechanism is that $Y$ is built partly *from* $X$.
-
-For example, suppose
-
-$$
-Y = a X + b + U
-$$
-
-where $U$ is noise, independent of $X$, with mean zero and standard deviation $\sigma_U$.
-
-(Think of $X$ as floor area and $Y$ as price: bigger houses mechanically cost more to build, plus some noise from location, finish quality, and so on.)
-
-Since $U$ is independent of $X$, $\mathrm{Cov}(X, U) = 0$, and so
-
-$$
-\mathrm{Cov}(X,Y) = \mathrm{Cov}(X, aX + b + U) = a \, \mathrm{Cov}(X,X) = a \sigma_X^2
-$$
-
-Similarly, $\mathbb V[Y] = a^2 \sigma_X^2 + \sigma_U^2$, so that
-
-$$
-\mathrm{Corr}(X,Y) = \frac{a \sigma_X}{\sqrt{a^2 \sigma_X^2 + \sigma_U^2}}
-$$
-
-The correlation is driven entirely by the *relative* size of the signal ($a X$) and the noise ($U$).
-
-Let's see this in a picture, fixing $a=1$ and $\sigma_X = 1$ and increasing $\sigma_U$.
-
-```{code-cell} ipython3
----
-mystnb:
-  figure:
-    caption: Correlation strength as noise grows
-    name: fig:bivariate-signal-noise
----
 a = 1.0
-sigma_U_vals = [0.2, 1.0, 3.0]
 
 fig, axes = plt.subplots(1, 3, figsize=(12, 4), sharex=True, sharey=True)
-for ax, sigma_U in zip(axes, sigma_U_vals):
+for ax, σ_w in zip(axes, (0.2, 1.0, 3.0)):
     x = rng.standard_normal(N)
-    u = rng.normal(scale=sigma_U, size=N)
-    y = a * x + u
-    rho = a / np.sqrt(a**2 + sigma_U**2)
+    w = rng.normal(scale=σ_w, size=N)
+    y = a * x + w
+    ρ = a / np.sqrt(a**2 + σ_w**2)
     ax.scatter(x, y, alpha=0.5, s=10)
-    ax.set_title(rf'$\sigma_U={sigma_U}$, $\rho={rho:.2f}$')
+    ax.set_title(rf'$\sigma_W={σ_w}$, $\rho={ρ:.2f}$')
     ax.set_xlabel('x')
 axes[0].set_ylabel('y')
 plt.show()
 ```
 
-As the noise grows, the cloud of points fattens and the correlation falls, even though the underlying mechanism --- $Y$ built from $X$ plus independent noise --- never changes.
+As the noise grows, the cloud of points fattens and the correlation falls, even though the underlying mechanism never changes.
 
-This is a useful mental model to have in mind whenever you see two correlated variables: often there is some shared component driving both, plus independent noise on top.
+If $X$ and $W$ are both normal, then the pair $(X,Y)$ built this way is bivariate normal.
 
-## Back to the normal distribution
-
-We have now covered independence, covariance and correlation in general.
-
-Let's return to the bivariate normal density and connect it to what we have just learned.
-
-Recall the contour plots above: when $\rho = 0$ the contours were circles, and when $\rho \neq 0$ they were tilted ellipses.
-
-A circular contour is exactly what independence looks like here: the density factors into the product of the two marginal densities we found above, $p(x,y) = p_X(x) \, p_Y(y)$.
-
-So for the bivariate normal --- and *only* for the bivariate normal --- zero correlation is equivalent to independence.
-
-```{note}
-Two further properties that are special to the bivariate normal, and useful to know:
-
-* any linear combination $a X + b Y$ is normally distributed, and
-* the conditional distribution of $Y$ given $X=x$ is itself normal, with a mean that is *linear* in $x$.
-
-We use the first property in the next subsection, and the second property later, when we preview linear regression.
-```
-
-It is worth seeing what a *sample* from this distribution looks like, since real data will never arrive as a clean density --- only as points.
-
-```{code-cell} ipython3
----
-mystnb:
-  figure:
-    caption: Simulated draws from a bivariate normal
-    name: fig:bivariate-normal-sample
----
-u = bivariate_normal(0, 0, 1, 1, 0.7)
-sample = u.rvs(500, random_state=1234)
-
-fig, ax = plt.subplots()
-ax.scatter(sample[:, 0], sample[:, 1], alpha=0.4, s=10)
-ax.contour(X_mesh, Y_mesh, u.pdf(pos), levels=6, cmap='viridis')
-ax.set_xlabel('x')
-ax.set_ylabel('y')
-plt.show()
-```
-
-The points scatter around the contours in exactly the elliptical cloud shape we should now expect, denser near the center and thinner in the tails.
-
-Keep this picture in mind: it is the shape we will be looking for when we turn to real data below.
-
-### A word of caution
+## When is a pair jointly normal?
 
 It is tempting to think that, if $X$ and $Y$ are each individually normal, then the pair $(X,Y)$ must be bivariate normal.
 
 This is false.
-
-Here is a simple counterexample.
 
 Let $X$ be standard normal, and construct $Y$ by
 
 $$
 Y = \begin{cases} X & \text{if } |X| < 1 \\ -X & \text{if } |X| \geq 1 \end{cases}
 $$
+
+Since the standard normal density is symmetric about zero, flipping the sign of $X$ whenever $|X| \geq 1$ does not change its distribution, so $Y$ is also standard normal.
 
 ```{code-cell} ipython3
 ---
@@ -579,263 +394,509 @@ g.set_axis_labels('x', 'y')
 plt.show()
 ```
 
-The two histograms on the margins already look like the familiar bell shape of a normal density.
+The histograms on the margins have the familiar bell shape, yet the joint distribution looks nothing like an elliptical cloud.
 
-Since the standard normal density is symmetric about zero, flipping the sign of $X$ whenever $|X| \geq 1$ does not change its distribution, so $Y$ is also standard normal.
+It is concentrated on two crossing lines.
 
-```{code-cell} ipython3
-scipy.stats.skew(y), scipy.stats.kurtosis(y)
-```
+For a genuinely bivariate normal pair, every linear combination $aX+bY$ is normal, but here $X+Y = 0$ whenever $|X| \geq 1$, which happens about a third of the time.
 
-Both are close to zero, as they should be for a normal marginal.
+The lesson is that checking each variable individually is not enough: we need to look at the joint distribution directly.
 
-Yet the joint distribution of $(X,Y)$ looks nothing like the elliptical clouds we saw above --- it is concentrated on two crossing lines, plainly visible in the center panel above.
+## Simple regression
 
-We noted above that, for a genuinely bivariate normal pair, *every* linear combination $aX+bY$ is normal.
+We now turn to fitting a line through data.
 
-That gives us a sharper test than checking the marginals one at a time: let's look at $X+Y$.
+Let's take a small data set in which $y_i$ is the daily sales of an ice-cream cart in dollars and $x_i$ is the day's temperature in Celsius.
 
 ```{code-cell} ipython3
----
-mystnb:
-  figure:
-    caption: Sum of the two variables
-    name: fig:bivariate-sum-not-normal
----
-s = x + y
-
-fig, ax = plt.subplots()
-ax.hist(s, bins=60, density=True)
-ax.set_xlabel('x + y')
-ax.set_ylabel('density')
-plt.show()
+sales = pd.DataFrame({
+    'temperature': [32, 21, 24, 35, 10, 11, 22, 21, 27, 2],
+    'sales': [2000, 1000, 1500, 2500, 500, 900, 1100, 1500, 1800, 250]
+})
+x, y = sales['temperature'], sales['sales']
 ```
 
-Roughly a third of the mass sits in a single spike at zero --- exactly the draws with $|X| \geq 1$, for which $Y=-X$ and so $X+Y=0$ --- with the rest spread out on either side.
+We would like to choose a line
 
-This is about as far from a normal density as a distribution can look, even though the skewness and kurtosis of $X+Y$ are both close to zero and would tell a much less dramatic story.
+$$
+\hat y_i = \alpha + \beta x_i
+$$
 
-The lesson: checking that each variable *individually* looks normal is not enough to justify a bivariate normal model, and even standard numerical diagnostics can miss a failure that a picture catches instantly.
+that fits these data well.
 
-We should check the joint distribution directly, using the tools below.
+### Fitting by hand
 
-## Back to the data
-
-Let's return to the house price and floor area data, and look at their joint distribution more closely.
-
-We already saw the raw scatter plot at the start of the lecture.
-
-A histogram-style alternative is the two-dimensional analog of the histograms we used in {doc}`observed_distributions`: a **hexbin plot**, which counts the number of points falling into each small hexagonal bin and colors the bin accordingly.
-
-Let's draw one using `seaborn`, together with the marginal histogram of each variable along the edges --- a direct picture of the joint distribution and the two marginal distributions we defined above, all in one figure.
+Let's try two guesses, with the distance from each point to the line drawn in red.
 
 ```{code-cell} ipython3
 ---
 mystnb:
   figure:
-    caption: Joint and marginal distributions
-    name: fig:bivariate-jointplot
-tags: [hide-input]
+    caption: Two lines fitted by hand
+    name: fig:hand-fits
 ---
-g = sns.jointplot(x=area, y=price, kind='hex', height=5)
-g.set_axis_labels('living area (square feet)', 'sale price (US$)')
+def plot_fit(ax, α, β, label):
+    "Plot the sales data, the line and the residuals."
+    ax.scatter(x, y)
+    x_vals = np.array([x.min(), x.max()])
+    ax.plot(x_vals, α + β * x_vals, 'g', lw=2, label=label)
+    ax.vlines(x, α + β * x, y, color='r', lw=1)
+    ax.set_xlabel('temperature (Celsius)')
+    ax.set_ylabel('sales (US$)')
+    ax.legend()
+
+fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
+plot_fit(axes[0], 5, 10, r'$\alpha=5, \beta=10$')
+plot_fit(axes[1], 5, 65, r'$\alpha=5, \beta=65$')
 plt.show()
 ```
 
-The center panel is the joint distribution, in hexbin form, and matches the shape we already saw in the scatter plot.
+The first line is poor and the second looks reasonable.
 
-The panels on the top and right are the two marginal distributions, exactly the row and column sums we used to build marginals in the discrete example above, now applied to the raw continuous data.
+But which line is best depends on what we mean by "best", so we need a criterion.
 
-The sample correlation confirms the positive relationship numerically.
+### Choosing a criterion
+
+The red segments are the [residuals](https://en.wikipedia.org/wiki/Errors_and_residuals)
+
+$$
+e_i = y_i - \alpha - \beta x_i
+$$
+
+and a good line should make them small.
+
+The most common criterion, called [ordinary least squares](https://en.wikipedia.org/wiki/Ordinary_least_squares) (OLS), minimizes the sum of squared residuals
+
+$$
+C(\alpha, \beta) = \sum_{i=1}^n (y_i - \alpha - \beta x_i)^2
+$$
+
+### Optimizing
+
+Setting the partial derivatives of $C$ to zero gives two equations, which we solve in {ref}`bivariate_ex1`.
+
+The solution is
+
+$$
+\hat \beta
+    = \frac{\sum_{i=1}^n (x_i - \bar x)(y_i - \bar y)}{\sum_{i=1}^n (x_i - \bar x)^2}
+    = r \, \frac{s_y}{s_x}
+\qquad \text{and} \qquad
+\hat \alpha = \bar y - \hat \beta \bar x
+$$
+
+So the slope is the sample correlation $r$, rescaled by the units of the two variables.
 
 ```{code-cell} ipython3
-np.corrcoef(area, price)[0, 1]
+r = np.corrcoef(x, y)[0, 1]
+β_hat = r * y.std() / x.std()
+α_hat = y.mean() - β_hat * x.mean()
+α_hat, β_hat
 ```
 
-Recall from {doc}`fitting_distributions` that taking logarithms made the price data look much closer to normal.
-
-The same is true of floor area, and the correlation between the two logged variables is almost the same as before.
+The function `np.polyfit` gives the same answer, with the slope first.
 
 ```{code-cell} ipython3
-log_price = np.log(price)
-log_area = np.log(area)
-np.corrcoef(log_area, log_price)[0, 1]
+np.polyfit(x, y, 1)
 ```
+
+Let's confirm that these values really do minimize the criterion, by varying one parameter at a time.
 
 ```{code-cell} ipython3
 ---
 mystnb:
   figure:
-    caption: Log price against log area
-    name: fig:bivariate-log-scatter
-tags: [hide-input]
+    caption: The sum of squared residuals around the optimum
+    name: fig:ssr-curves
 ---
-fig, ax = plt.subplots()
-ax.scatter(log_area, log_price, alpha=0.3, s=10)
-ax.set_xlabel('log(living area)')
-ax.set_ylabel('log(sale price)')
+def ssr(α, β):
+    return ((y - α - β * x)**2).sum()
+
+β_vals = np.linspace(20, 100, 200)
+α_vals = np.linspace(-500, 500, 200)
+
+fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+axes[0].plot(β_vals, [ssr(α_hat, β) for β in β_vals], lw=2)
+axes[0].axvline(β_hat, color='r')
+axes[0].set_xlabel(r'$\beta$')
+axes[0].set_ylabel('sum of squared residuals')
+axes[1].plot(α_vals, [ssr(α, β_hat) for α in α_vals], lw=2)
+axes[1].axvline(α_hat, color='r')
+axes[1].set_xlabel(r'$\alpha$')
 plt.show()
 ```
 
-This log-log scatter plot looks like a good candidate for a bivariate normal fit: an elliptical cloud, roughly symmetric along its main axis.
+### Regression and the conditional mean
 
-## Fitting a bivariate normal by the method of moments
-
-Recall from {doc}`fitting_distributions` that the method of moments chooses parameters by matching sample moments to population moments.
-
-The bivariate normal has five parameters, so we match five sample moments: the two means, the two standard deviations, and the correlation.
-
-```{code-cell} ipython3
-def fit_bivariate_normal(x, y):
-    μ_x, μ_y = x.mean(), y.mean()
-    σ_x, σ_y = x.std(), y.std()
-    ρ = np.corrcoef(x, y)[0, 1]
-    return bivariate_normal(μ_x, μ_y, σ_x, σ_y, ρ), (μ_x, μ_y, σ_x, σ_y, ρ)
-```
-
-```{code-cell} ipython3
-fitted, (μ_x, μ_y, σ_x, σ_y, ρ) = fit_bivariate_normal(log_area, log_price)
-μ_x, μ_y, σ_x, σ_y, ρ
-```
-
-Let's overlay the contours of the fitted density on the scatter plot of the data.
-
-```{code-cell} ipython3
----
-mystnb:
-  figure:
-    caption: Fitted bivariate normal density
-    name: fig:bivariate-fit
----
-x_grid = np.linspace(log_area.min(), log_area.max(), 100)
-y_grid = np.linspace(log_price.min(), log_price.max(), 100)
-X_mesh, Y_mesh = np.meshgrid(x_grid, y_grid)
-pos = np.dstack((X_mesh, Y_mesh))
-
-fig, ax = plt.subplots()
-ax.scatter(log_area, log_price, alpha=0.2, s=8)
-ax.contour(X_mesh, Y_mesh, fitted.pdf(pos), levels=6, cmap='viridis')
-ax.set_xlabel('log(living area)')
-ax.set_ylabel('log(sale price)')
-plt.show()
-```
-
-The elliptical contours line up well with the shape of the cloud of points.
-
-The fit is not perfect --- real data rarely is --- but it captures the center, spread, and tilt of the data reasonably well.
-
-## Preview: regression as a conditional mean
-
-We noted above that, for the bivariate normal, the conditional distribution of $Y$ given $X=x$ is normal with a mean that is linear in $x$.
-
-The formula for that conditional mean is
+For a bivariate normal pair, the best guess of $Y$ given that $X = x$ is a straight line in $x$:
 
 $$
 \mathbb E[Y \mid X=x] = \mu_Y + \rho \frac{\sigma_Y}{\sigma_X} (x - \mu_X)
 $$
 
-This is a genuinely useful fact: it tells us the best guess of $Y$ (in a mean-squared-error sense) given that we observe $X=x$, and it is a straight line in $x$.
+This has the same form as the OLS line, with $\hat \alpha + \hat \beta x = \bar y + r (s_y / s_x)(x - \bar x)$.
 
-Let's plot it on top of our fitted contours.
+So OLS estimates the conditional mean when the data are bivariate normal, and it remains a useful summary of a linear relationship when they are not.
+
+Let's fit a line to the house data, in logs, which makes both variables closer to normal.
 
 ```{code-cell} ipython3
 ---
 mystnb:
   figure:
-    caption: The conditional mean line
-    name: fig:bivariate-conditional-mean
+    caption: Log price against log area, with the OLS line
+    name: fig:log-ames-ols
 ---
-slope = ρ * σ_y / σ_x
-intercept = μ_y - slope * μ_x
+log_area, log_price = np.log(area), np.log(price)
+slope, intercept = np.polyfit(log_area, log_price, 1)
+x_vals = np.array([log_area.min(), log_area.max()])
 
 fig, ax = plt.subplots()
 ax.scatter(log_area, log_price, alpha=0.2, s=8)
-ax.plot(x_grid, intercept + slope * x_grid, 'k--', lw=2,
-        label=r'$\mathbb{E}[Y \mid X=x]$')
+ax.plot(x_vals, intercept + slope * x_vals, 'k--', lw=2, label='OLS line')
 ax.set_xlabel('log(living area)')
 ax.set_ylabel('log(sale price)')
 ax.legend()
 plt.show()
 ```
 
-This line runs straight through the middle of the cloud of points, in the direction that best summarizes how $y$ moves with $x$.
+## Other criteria
 
-In fact, if we compute the ordinary least squares line for this data --- the method used in {doc}`simple_linear_regression` --- we get exactly the same slope and intercept.
+Least squares is not the only reasonable criterion.
+
+Squaring means that a large residual counts very heavily, so a single unusual observation can pull the whole line towards it.
+
+An alternative is [least absolute deviations](https://en.wikipedia.org/wiki/Least_absolute_deviations) (LAD), which minimizes
+
+$$
+\sum_{i=1}^n | y_i - \alpha - \beta x_i |
+$$
+
+This criterion has no simple formula, so we minimize it numerically with SciPy.
+
+To compare the two, suppose that we add one unusual day to the ice-cream data: a hot day when the cart broke down and sales were only 100 dollars.
 
 ```{code-cell} ipython3
-β, α = np.polyfit(log_area, log_price, 1)
-(α, β), (intercept, slope)
+---
+mystnb:
+  figure:
+    caption: OLS and LAD lines with an outlier
+    name: fig:ols-vs-lad
+---
+x_new = np.append(x, 30)
+y_new = np.append(y, 100)
+
+def lad(p):
+    α, β = p
+    return np.abs(y_new - α - β * x_new).sum()
+
+result = minimize(lad, x0=[0, 50], method='Nelder-Mead',
+                  options={'xatol': 1e-3, 'fatol': 1e-3, 'maxiter': 4000})
+α_lad, β_lad = result.x
+β_ols, α_ols = np.polyfit(x_new, y_new, 1)
+
+x_vals = np.array([x_new.min(), x_new.max()])
+
+fig, ax = plt.subplots()
+ax.scatter(x_new, y_new)
+ax.scatter(30, 100, color='r', label='outlier')
+ax.plot(x_vals, α_ols + β_ols * x_vals, lw=2, label='OLS')
+ax.plot(x_vals, α_lad + β_lad * x_vals, lw=2, label='LAD')
+ax.set_xlabel('temperature (Celsius)')
+ax.set_ylabel('sales (US$)')
+ax.legend()
+plt.show()
 ```
 
-This is not a coincidence.
+```{code-cell} ipython3
+β_ols, β_lad
+```
 
-Fitting a line by OLS and computing the conditional mean of a fitted bivariate normal are, for this kind of data, the same calculation viewed two different ways.
+One bad day pulls the OLS slope down from about 64 to about 49, while the LAD slope stays at about 62.5, as it was without the outlier.
 
-{doc}`simple_linear_regression` develops the OLS approach in full, without relying on an assumption of joint normality.
+This is the same contrast as between the mean and the median in {doc}`observed_distributions`, and indeed LAD estimates the conditional median rather than the conditional mean.
+
+## An extended example
+
+Let's use regression on a question of policy interest: how does life expectancy vary with income across countries?
+
+The data come from [Our World in Data](https://ourworldindata.org/grapher/life-expectancy-vs-gdp-per-capita), and we use 2018, the most recent year available.
+
+```{code-cell} ipython3
+url = ('https://github.com/QuantEcon/data-lectures/raw/main/'
+       'lectures/life-expectancy-vs-gdp-per-capita.csv')
+columns = ['Code', 'Year', 'Life expectancy at birth (historical)',
+           'GDP per capita']
+gdp_life = pd.read_csv(url, usecols=columns)[columns].dropna()
+gdp_life.columns = ['code', 'year', 'life_expectancy', 'gdppc']
+
+# keep 2018, and drop the world aggregate, which is not a country
+gdp_life = gdp_life[(gdp_life['year'] == 2018)
+                    & ~gdp_life['code'].str.startswith('OWID')]
+gdp_life['log_gdppc'] = np.log10(gdp_life['gdppc'])
+len(gdp_life)
+```
+
+Here are the data, with GDP per capita on both its original scale and a log scale.
+
+```{code-cell} ipython3
+---
+mystnb:
+  figure:
+    caption: Life expectancy against GDP per capita, 2018
+    name: fig:preston-curve
+---
+slope, intercept = np.polyfit(gdp_life['log_gdppc'],
+                              gdp_life['life_expectancy'], 1)
+x_vals = np.array([gdp_life['log_gdppc'].min(), gdp_life['log_gdppc'].max()])
+
+fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
+axes[0].scatter(gdp_life['gdppc'], gdp_life['life_expectancy'], s=12, alpha=0.6)
+axes[0].set_xticks(np.arange(0, 200_000, 50_000))
+axes[0].set_xlabel('GDP per capita')
+axes[0].set_ylabel('life expectancy (years)')
+axes[1].scatter(gdp_life['log_gdppc'], gdp_life['life_expectancy'],
+                s=12, alpha=0.6)
+axes[1].plot(x_vals, intercept + slope * x_vals, 'k--', lw=2)
+axes[1].set_xlabel('log10 of GDP per capita')
+plt.show()
+```
+
+On the original scale the relationship is strongly curved, a pattern known as the [Preston curve](https://en.wikipedia.org/wiki/Preston_curve).
+
+Taking logs makes it close to linear, so a straight line is a much better summary.
+
+The correlation rises accordingly.
+
+```{code-cell} ipython3
+np.corrcoef(gdp_life['gdppc'], gdp_life['life_expectancy'])[0, 1], \
+np.corrcoef(gdp_life['log_gdppc'], gdp_life['life_expectancy'])[0, 1]
+```
+
+```{code-cell} ipython3
+slope
+```
+
+Since we used base 10 logs, the slope says that a country with ten times the GDP per capita has, on average, about 13 more years of life expectancy.
+
+Notice how carefully that sentence is worded, since it describes a pattern across countries and not the effect of raising a country's income.
+
+## Correlation and causality
+
+Suppose a survey finds that women who own horses live longer than women who don't.
+
+It would be odd to prescribe horses for longevity.
+
+Owning a horse is expensive, so horse owners are likely to be wealthier and to have better health insurance, and those may be what matters.
+
+A third factor that affects both variables like this is called a [confounder](https://en.wikipedia.org/wiki/Confounding), and it can produce a [correlation without any causal link](https://en.wikipedia.org/wiki/Correlation_does_not_imply_causation) between the two.
+
+Here is a real example, using data on the 50 US states and the District of Columbia (DC).
+
+For each one we have Donald Trump's percentage share of the 2024 presidential vote, from the Federal Election Commission, and life expectancy at birth in 2021, from the US National Center for Health Statistics.
+
+```{code-cell} ipython3
+path = '_static/lecture_specific/bivariate_dist/state_votes_life_expectancy.csv'
+url = ('https://raw.githubusercontent.com/jstac/py_for_ds_public/main/lectures/'
+       + path)
+
+# use the copy stored with this book if there is one, and otherwise download it
+states = pd.read_csv(path if os.path.exists(path) else url)
+states.head()
+```
+
+Let's plot the data.
+
+```{code-cell} ipython3
+---
+mystnb:
+  figure:
+    caption: Life expectancy against Trump vote share, by state
+    name: fig:votes-longevity-all
+---
+fig, ax = plt.subplots()
+ax.scatter(states['trump_share'], states['life_expectancy'], alpha=0.7)
+for _, row in states[states['code'].isin(['DC', 'HI', 'MS'])].iterrows():
+    ax.annotate(row['code'], (row['trump_share'], row['life_expectancy']),
+                xytext=(5, 5), textcoords='offset points')
+ax.margins(y=0.1)
+ax.set_xlabel('Trump share of the 2024 vote (%)')
+ax.set_ylabel('life expectancy in 2021 (years)')
+plt.show()
+```
+
+DC sits far to the left of everything else, and it is a single city rather than a state, so let's see what happens without it.
+
+```{code-cell} ipython3
+no_dc = states[states['code'] != 'DC']
+
+r_all = np.corrcoef(states['trump_share'], states['life_expectancy'])[0, 1]
+r_no_dc = np.corrcoef(no_dc['trump_share'], no_dc['life_expectancy'])[0, 1]
+slope, intercept = np.polyfit(no_dc['trump_share'], no_dc['life_expectancy'], 1)
+
+r_all, r_no_dc, slope
+```
+
+```{code-cell} ipython3
+---
+mystnb:
+  figure:
+    caption: The same data without DC, with the OLS line
+    name: fig:votes-longevity-fit
+---
+x_vals = np.array([no_dc['trump_share'].min(), no_dc['trump_share'].max()])
+
+fig, ax = plt.subplots()
+ax.scatter(no_dc['trump_share'], no_dc['life_expectancy'], alpha=0.7)
+ax.plot(x_vals, intercept + slope * x_vals, 'k--', lw=2)
+ax.set_xlabel('Trump share of the 2024 vote (%)')
+ax.set_ylabel('life expectancy in 2021 (years)')
+plt.show()
+```
+
+The correlation is about $-0.53$ with DC and $-0.66$ without it, so this one choice about the data matters, and any report should state it.
+
+Without DC, states with a vote share 10 percentage points higher have life expectancy about 1.6 years lower, on average.
+
+What can we conclude from this?
+
+Not that voting one way or the other affects how long people live, since these data cannot tell us that.
+
+Many factors differ across states and are related to both variables, including income, education, age, smoking, health insurance and region.
+
+The year 2021 also falls in the pandemic, whose effects differed across states.
+
+Moreover, each point is a whole state, so the figure says nothing directly about individuals, and in particular it does not show that any individual's vote is related to their lifespan.
+
+Drawing conclusions about individuals from group data like this is called the [ecological fallacy](https://en.wikipedia.org/wiki/Ecological_fallacy).
+
+Learning about causes takes more than a strong correlation: it takes a research design, such as a randomized trial, that rules out explanations like these.
 
 ## Exercises
 
-```{exercise}
+```{exercise-start}
 :label: bivariate_ex1
+```
 
-In {doc}`observed_distributions` we compared the monthly returns on Amazon and Costco shares using violin plots, treating each series separately.
+Derive the OLS formulas given above, by setting the partial derivatives of $C(\alpha, \beta)$ to zero.
 
-Using `yfinance`, download monthly closing prices for `'AMZN'` and `'COST'` between 2000-1-1 and 2024-1-1, and compute monthly returns (percent change) for each, as in {doc}`observed_distributions`.
-
-1. Produce a scatter plot of the two return series and compute their sample correlation.
-2. Fit a bivariate normal by the method of moments and overlay its contours on the scatter plot.
-3. Recall from {doc}`fitting_distributions` that monthly stock returns have heavier tails than the normal distribution.
-
-   Given this, would you expect the bivariate normal fit here to be better or worse than the fit we found for house prices?
-
-   Check your answer against the figure.
+```{exercise-end}
 ```
 
 ```{solution-start} bivariate_ex1
 :class: dropdown
 ```
 
-```{code-cell} ipython3
-:tags: [hide-output]
+Setting the derivative with respect to $\alpha$ to zero and dividing by $-2$ gives
 
-!pip install --upgrade yfinance
+$$
+\sum_{i=1}^n (y_i - \alpha - \beta x_i) = 0
+$$
+
+Dividing by $n$ and rearranging gives $\alpha = \bar y - \beta \bar x$.
+
+Setting the derivative with respect to $\beta$ to zero and dividing by $-2$ gives
+
+$$
+\sum_{i=1}^n x_i (y_i - \alpha - \beta x_i) = 0
+$$
+
+Substituting for $\alpha$ gives
+
+$$
+\sum_{i=1}^n x_i (y_i - \bar y) = \beta \sum_{i=1}^n x_i (x_i - \bar x)
+$$
+
+Since $\sum_i (y_i - \bar y) = 0$ and $\sum_i (x_i - \bar x) = 0$, we can subtract $\bar x$ from $x_i$ on both sides without changing either sum, which gives
+
+$$
+\hat \beta = \frac{\sum_{i=1}^n (x_i - \bar x)(y_i - \bar y)}{\sum_{i=1}^n (x_i - \bar x)^2}
+$$
+
+Dividing the numerator and denominator by $n$ shows that this equals $r s_x s_y / s_x^2 = r s_y / s_x$.
+
+```{solution-end}
+```
+
+```{exercise-start}
+:label: bivariate_ex2
+```
+
+You ask an AI tool how much life expectancy rises with GDP per capita, using the `gdp_life` data above, and it returns the code below.
+
+```{code-block} python3
+slope, intercept = np.polyfit(gdp_life['life_expectancy'],
+                              gdp_life['log_gdppc'], 1)
+print(slope)
+```
+
+It then reports that a tenfold rise in GDP per capita goes with about 0.056 more years of life expectancy.
+
+The code runs without an error, but what is wrong?
+
+Is the slope of one regression simply the inverse of the slope of the other?
+
+```{exercise-end}
+```
+
+```{solution-start} bivariate_ex2
+:class: dropdown
+```
+
+The arguments are the wrong way around: `np.polyfit` takes $x$ first, so this code regresses log GDP per capita on life expectancy.
+
+```{code-cell} ipython3
+wrong, _ = np.polyfit(gdp_life['life_expectancy'], gdp_life['log_gdppc'], 1)
+right, _ = np.polyfit(gdp_life['log_gdppc'], gdp_life['life_expectancy'], 1)
+wrong, right, 1 / right
+```
+
+The slope that the AI tool found is in units of log GDP per capita per year of life expectancy, so its statement is wrong.
+
+The two slopes are also not inverses of each other, because the two regressions minimize different things: vertical distances in one case and horizontal distances in the other.
+
+In fact their product is $r^2$, so they would be inverses only if the points lay exactly on a line.
+
+```{solution-end}
+```
+
+```{exercise-start}
+:label: bivariate_ex3
+```
+
+Let $X$ be standard normal and let $Y = X^2$.
+
+Simulate a large sample, plot it and compute the sample correlation.
+
+Are $X$ and $Y$ independent?
+
+What does this tell us about reading a correlation close to zero?
+
+```{exercise-end}
+```
+
+```{solution-start} bivariate_ex3
+:class: dropdown
 ```
 
 ```{code-cell} ipython3
-import yfinance as yf
-
-df_amzn = yf.download('AMZN', '2000-1-1', '2024-1-1', interval='1mo')
-x_amazon = df_amzn['Close'].pct_change()[1:]['AMZN'] * 100
-
-df_cost = yf.download('COST', '2000-1-1', '2024-1-1', interval='1mo')
-x_costco = df_cost['Close'].pct_change()[1:]['COST'] * 100
-
-np.corrcoef(x_amazon, x_costco)[0, 1]
-```
-
-The correlation is modest and positive: the two stocks tend to move together, but far from perfectly.
-
-```{code-cell} ipython3
-fitted, (μ_x, μ_y, σ_x, σ_y, ρ) = fit_bivariate_normal(x_amazon.values, x_costco.values)
-
-x_grid = np.linspace(x_amazon.min(), x_amazon.max(), 100)
-y_grid = np.linspace(x_costco.min(), x_costco.max(), 100)
-X_mesh, Y_mesh = np.meshgrid(x_grid, y_grid)
-pos = np.dstack((X_mesh, Y_mesh))
+x_sim = rng.standard_normal(10_000)
+y_sim = x_sim**2
 
 fig, ax = plt.subplots()
-ax.scatter(x_amazon, x_costco, alpha=0.4, s=10)
-ax.contour(X_mesh, Y_mesh, fitted.pdf(pos), levels=6, cmap='viridis')
-ax.set_xlabel('Amazon monthly return (%)')
-ax.set_ylabel('Costco monthly return (%)')
+ax.scatter(x_sim, y_sim, alpha=0.2, s=5)
+ax.set_xlabel('x')
+ax.set_ylabel('y')
 plt.show()
+
+np.corrcoef(x_sim, y_sim)[0, 1]
 ```
 
-The fit here is visibly worse than it was for house prices.
+The correlation is close to zero, and indeed the population covariance is $\mathbb E[X^3] = 0$.
 
-The scatter has several points well outside the outermost contour, particularly the extreme returns during 2000--2001 and 2008--2009.
+Yet $X$ and $Y$ are far from independent, since $X$ determines $Y$ exactly.
 
-This matches what we already knew from {doc}`fitting_distributions`: monthly stock returns have heavier tails than the normal distribution allows for, and that failure carries over directly to the bivariate case.
+Correlation only measures linear dependence, so we should always look at the data as well as the number.
 
 ```{solution-end}
 ```

@@ -22,14 +22,13 @@ In data science applications, we are often interested in data on a specific vari
 
 In this lecture we give a quick introduction to probability distributions using Python.
 
-This lecture is the first of three.
+This lecture is the first of two.
 
 The second, {doc}`observed_distributions`, treats observed data --- sets of
 numbers that we measure or collect --- and its connection to the probability
 distributions studied here.
 
-The third, {doc}`fitting_distributions`, asks which probability distribution
-best describes a given data set.
+It also asks which probability distribution best describes a given data set.
 
 ```{code-cell} ipython3
 import matplotlib.pyplot as plt
@@ -71,7 +70,7 @@ plt.show()
 
 Each histogram has the familiar "bell" shape.
 
-This suggests that we can approximate the data using a **normal distribution** --- a continuous distribution with a bell-shaped density that we study in detail below.
+This suggests that we can approximate the data using a [normal distribution](https://en.wikipedia.org/wiki/Normal_distribution) --- a continuous distribution with a bell-shaped density that we study in detail below.
 
 To do so, we fit a normal distribution to each dataset, choosing its mean and standard deviation to match the sample mean and standard deviation of the heights.
 
@@ -97,11 +96,11 @@ plt.show()
 
 The fit is remarkably good.
 
-Notice what this achieves: each dataset of around 5,000 individual measurements is now summarized by a smooth density with just **two parameters** --- the mean $\mu$, which sets the center, and the standard deviation $\sigma$, which sets the spread.
+Notice what this achieves: each dataset of around 5,000 individual measurements is now summarized by a smooth density with just two parameters --- the mean $\mu$, which sets the center, and the standard deviation $\sigma$, which sets the spread.
 
 Such compact summaries are extremely useful.
 
-They are one reason we study **common distributions**: named families of distributions, each governed by a small number of parameters, that have proven useful for describing data.
+They are one reason we study common distributions: named families of distributions, each governed by a small number of parameters, that have proven useful for describing data.
 
 We turn to these now, recalling the definitions of some well-known distributions and exploring how to manipulate them with SciPy.
 
@@ -109,7 +108,7 @@ We turn to these now, recalling the definitions of some well-known distributions
 
 Let's start with discrete distributions.
 
-A discrete distribution is defined by a set of numbers $S = \{x_1, \ldots, x_n\}$ and a **probability mass function** (PMF) on $S$, which is a function $p$ from $S$ to $[0,1]$ with the property 
+A discrete distribution is defined by a set of numbers $S = \{x_1, \ldots, x_n\}$ and a [probability mass function](https://en.wikipedia.org/wiki/Probability_mass_function) (PMF) on $S$, which is a function $p$ from $S$ to $[0,1]$ with the property 
 
 $$ 
 \sum_{i=1}^n p(x_i) = 1 
@@ -144,7 +143,7 @@ plt.show()
 
 Here each $x_i$ is an age and $p(x_i)$ is the fraction of the population at that age, and the fractions sum to one.
 
-We say that a random variable $X$ **has distribution** $p$ if $X$ takes value $x_i$ with probability $p(x_i)$.
+We say that a random variable $X$ has distribution $p$ if $X$ takes value $x_i$ with probability $p(x_i)$.
 
 That is,
 
@@ -152,13 +151,13 @@ $$
 \mathbb P\{X = x_i\} = p(x_i) \quad \text{for } i= 1, \ldots, n 
 $$
 
-The **mean** or **expected value** of a random variable $X$ with distribution $p$ is 
+The mean or [expected value](https://en.wikipedia.org/wiki/Expected_value) of a random variable $X$ with distribution $p$ is 
 
 $$ 
 \mathbb{E}[X] = \sum_{i=1}^n x_i p(x_i)
 $$
 
-Expectation is also called the *first moment* of the distribution.
+Expectation is also called the first moment of the distribution.
 
 We also refer to this number as the mean of the distribution (represented by) $p$.
 
@@ -172,7 +171,7 @@ $$
 
 Every quantity we define below is an expectation of this form, for a suitable choice of $f$.
 
-The **variance** of $X$ is defined as 
+The [variance](https://en.wikipedia.org/wiki/Variance) of $X$ is defined as 
 
 $$ 
 \mathbb{V}[X] 
@@ -180,9 +179,9 @@ $$
     = \sum_{i=1}^n (x_i - \mathbb{E}[X])^2 p(x_i)
 $$
 
-Variance is also called the *second central moment* of the distribution.
+Variance is also called the second central moment of the distribution.
 
-The **standard deviation** of $X$ is the square root of the variance:
+The [standard deviation](https://en.wikipedia.org/wiki/Standard_deviation) of $X$ is the square root of the variance:
 
 $$
 \sigma = \sqrt{\mathbb{V}[X]}
@@ -196,11 +195,11 @@ This means that $\sigma$ can be read directly off the horizontal axis of a histo
 
 Means and variances are special cases of moments.
 
-Writing $\mu = \mathbb{E}[X]$, the $k$-th **moment** of $X$ is $\mathbb{E}[X^k]$, while the $k$-th **central moment** is $\mathbb{E}[(X - \mu)^k]$.
+Writing $\mu = \mathbb{E}[X]$, the $k$-th [moment](https://en.wikipedia.org/wiki/Moment_(mathematics)) of $X$ is $\mathbb{E}[X^k]$, while the $k$-th [central moment](https://en.wikipedia.org/wiki/Central_moment) is $\mathbb{E}[(X - \mu)^k]$.
 
 Thus the mean is the first moment and the variance is the second central moment.
 
-It is often convenient to work with **standardized moments**
+It is often convenient to work with [standardized moments](https://en.wikipedia.org/wiki/Standardized_moment)
 
 $$
 \mathbb{E} \left[ \left( \frac{X - \mu}{\sigma} \right)^k \right]
@@ -210,7 +209,7 @@ which are unchanged when we shift $X$ or rescale it.
 
 (If $X$ is measured in centimeters, we obtain the same standardized moments after converting to inches.)
 
-The third standardized moment is called the **skewness**:
+The third standardized moment is called the [skewness](https://en.wikipedia.org/wiki/Skewness):
 
 $$
 S = \mathbb{E} \left[ \left( \frac{X - \mu}{\sigma} \right)^3 \right]
@@ -220,7 +219,7 @@ Skewness measures asymmetry.
 
 Any distribution that is symmetric about its mean has zero skewness, while a distribution with a long right tail has positive skewness.
 
-The fourth standardized moment is called the **kurtosis**:
+The fourth standardized moment is called the [kurtosis](https://en.wikipedia.org/wiki/Kurtosis):
 
 $$
 K = \mathbb{E} \left[ \left( \frac{X - \mu}{\sigma} \right)^4 \right]
@@ -230,7 +229,7 @@ Kurtosis measures how much probability mass sits far out in the tails.
 
 For *every* normal distribution, $K = 3$, regardless of $\mu$ and $\sigma$.
 
-Since the normal distribution is such a useful benchmark, it is common to subtract 3 and work with the **excess kurtosis**
+Since the normal distribution is such a useful benchmark, it is common to subtract 3 and work with the excess kurtosis
 
 $$
 K - 3
@@ -250,7 +249,7 @@ For example, `scipy.stats.kurtosis` returns the excess kurtosis by default, rath
 
 We will use skewness and excess kurtosis in {doc}`observed_distributions` to help judge whether a given data set looks normally distributed.
 
-The **cumulative distribution function** (CDF) of $X$ is defined by
+The [cumulative distribution function](https://en.wikipedia.org/wiki/Cumulative_distribution_function) (CDF) of $X$ is defined by
 
 $$
 F(x) = \mathbb{P}\{X \leq x\}
@@ -264,7 +263,7 @@ Hence the second term takes all $x_i \leq x$ and sums their probabilities.
 
 ### Uniform distribution
 
-One simple example is the **uniform distribution**, where $p(x_i) = 1/n$ for all $i$.
+One simple example is the [uniform distribution](https://en.wikipedia.org/wiki/Discrete_uniform_distribution), where $p(x_i) = 1/n$ for all $i$.
 
 We can import the uniform distribution on $S = \{1, \ldots, n\}$  from SciPy like so:
 
@@ -344,7 +343,7 @@ Check that your answers agree with `u.mean()` and `u.var()`.
 
 ### Bernoulli distribution
 
-Another useful distribution is the Bernoulli distribution on $S = \{0,1\}$, which has PMF:
+Another useful distribution is the [Bernoulli distribution](https://en.wikipedia.org/wiki/Bernoulli_distribution) on $S = \{0,1\}$, which has PMF:
 
 $$
 p(i) = \theta^i (1 - \theta)^{1-i}
@@ -382,7 +381,7 @@ u.pmf(0), u.pmf(1)
 
 ### Binomial distribution
 
-Another useful (and more interesting) distribution is the **binomial distribution** on $S=\{0, \ldots, n\}$, which has PMF:
+Another useful (and more interesting) distribution is the [binomial distribution](https://en.wikipedia.org/wiki/Binomial_distribution) on $S=\{0, \ldots, n\}$, which has PMF:
 
 $$ 
 p(i) = \binom{n}{i} \theta^i (1-\theta)^{n-i}
@@ -430,7 +429,7 @@ mystnb:
     name: fig:binomial-pmf
 ---
 fig, ax = plt.subplots()
-S = np.arange(1, n+1)
+S = np.arange(n+1)
 ax.plot(S, u.pmf(S), linestyle='', marker='o', alpha=0.8, ms=4)
 ax.vlines(S, 0, u.pmf(S), lw=0.2)
 ax.set_xticks(S)
@@ -449,7 +448,7 @@ mystnb:
     name: fig:binomial-cdf
 ---
 fig, ax = plt.subplots()
-S = np.arange(1, n+1)
+S = np.arange(n+1)
 ax.step(S, u.cdf(S))
 ax.vlines(S, 0, u.cdf(S), lw=0.2)
 ax.set_xticks(S)
@@ -472,7 +471,7 @@ Here is one solution:
 
 ```{code-cell} ipython3
 fig, ax = plt.subplots()
-S = np.arange(1, n+1)
+S = np.arange(n+1)
 u_sum = np.cumsum(u.pmf(S))
 ax.step(S, u_sum)
 ax.vlines(S, 0, u_sum, lw=0.2)
@@ -489,10 +488,10 @@ We can see that the output graph is the same as the one above.
 
 ### Geometric distribution
 
-The geometric distribution has infinite support $S = \{0, 1, 2, \ldots\}$ and its PMF is given by 
+The [geometric distribution](https://en.wikipedia.org/wiki/Geometric_distribution) has infinite support $S = \{1, 2, \ldots\}$ and its PMF is given by 
 
 $$
-p(i) = (1 - \theta)^i \theta
+p(i) = (1 - \theta)^{i-1} \theta
 $$
 
 where $\theta \in [0,1]$ is a parameter
@@ -501,9 +500,9 @@ where $\theta \in [0,1]$ is a parameter
 
 To understand the distribution, think of repeated independent random trials, each with success probability $\theta$.
 
-The interpretation of $p(i)$ is: the probability there are $i$ failures before the first success occurs.
+The interpretation of $p(i)$ is: the probability that the first success occurs on trial $i$.
 
-It can be shown that the mean of the distribution is $1/\theta$ and the variance is $(1-\theta)/\theta$.
+It can be shown that the mean of the distribution is $1/\theta$ and the variance is $(1-\theta)/\theta^2$.
 
 Here's an example.
 
@@ -524,7 +523,7 @@ mystnb:
 ---
 fig, ax = plt.subplots()
 n = 20
-S = np.arange(n)
+S = np.arange(1, n+1)
 ax.plot(S, u.pmf(S), linestyle='', marker='o', alpha=0.8, ms=4)
 ax.vlines(S, 0, u.pmf(S), lw=0.2)
 ax.set_xticks(S)
@@ -535,7 +534,7 @@ plt.show()
 
 ### Poisson distribution
 
-The Poisson distribution on $S = \{0, 1, \ldots\}$ with parameter $\lambda > 0$ has PMF
+The [Poisson distribution](https://en.wikipedia.org/wiki/Poisson_distribution) on $S = \{0, 1, \ldots\}$ with parameter $\lambda > 0$ has PMF
 
 $$
 p(i) = \frac{\lambda^i}{i!} e^{-\lambda}
@@ -567,7 +566,7 @@ mystnb:
     name: fig:poisson-pmf
 ---
 fig, ax = plt.subplots()
-S = np.arange(1, n+1)
+S = np.arange(n)
 ax.plot(S, u.pmf(S), linestyle='', marker='o', alpha=0.8, ms=4)
 ax.vlines(S, 0, u.pmf(S), lw=0.2)
 ax.set_xticks(S)
@@ -579,7 +578,7 @@ plt.show()
 ## Continuous distributions
 
 
-A continuous distribution is represented by a **probability density function**, which is a function $p$ over $\mathbb R$ (the set of all real numbers) such that $p(x) \geq 0$ for all $x$ and
+A continuous distribution is represented by a [probability density function](https://en.wikipedia.org/wiki/Probability_density_function), which is a function $p$ over $\mathbb R$ (the set of all real numbers) such that $p(x) \geq 0$ for all $x$ and
 
 $$ 
 \int_{-\infty}^\infty p(x) dx = 1 
@@ -609,22 +608,24 @@ $$
 
 The variance, standard deviation, moments, skewness and kurtosis are then defined by exactly the same expressions as before.
 
-The **cumulative distribution function** (CDF) of $X$ is defined by
+The cumulative distribution function (CDF) of $X$ is defined by
 
 $$
 F(x) = \mathbb P\{X \leq x\}
-        = \int_{-\infty}^x p(x) dx
+        = \int_{-\infty}^x p(y) dy
 $$
 
-For the continuous distributions we study below, $F$ is strictly increasing, so it has an inverse $F^{-1}$, which is called the **quantile function**.
+For the continuous distributions we study below, $F$ is strictly increasing, so it has an inverse $F^{-1}$, which is called the [quantile function](https://en.wikipedia.org/wiki/Quantile_function).
 
-Given $\tau \in (0,1)$, the value $q_\tau = F^{-1}(\tau)$ is called the $\tau$-th **quantile** of the distribution.
+Given $\tau \in (0,1)$, the value $q_\tau = F^{-1}(\tau)$ is called the $\tau$-th [quantile](https://en.wikipedia.org/wiki/Quantile) of the distribution.
 
 It is the point such that $X$ falls below it with probability $\tau$.
 
-The 0.5 quantile is called the **median**, which is an alternative measure of the center of a distribution.
+The 0.5 quantile is called the [median](https://en.wikipedia.org/wiki/Median), which is an alternative measure of the center of a distribution.
 
-The 0.25 and 0.75 quantiles are called the first and third **quartiles**, and the distance between them is the **interquartile range**, an alternative measure of spread.
+Another is the [mode](https://en.wikipedia.org/wiki/Mode_(statistics)), the value at which the density, or the PMF in the discrete case, is highest.
+
+The 0.25 and 0.75 quantiles are called the first and third [quartiles](https://en.wikipedia.org/wiki/Quartile), and the distance between them is the [interquartile range](https://en.wikipedia.org/wiki/Interquartile_range), an alternative measure of spread.
 
 These alternatives are useful because, unlike the mean and the standard deviation, they are barely affected by a small number of extreme values.
 
@@ -633,7 +634,7 @@ These alternatives are useful because, unlike the mean and the standard deviatio
 
 ### Normal distribution
 
-Perhaps the most famous distribution is the **normal distribution**, which has density
+Perhaps the most famous distribution is the normal distribution, which has density
 
 $$
 p(x) = \frac{1}{\sqrt{2\pi}\sigma}
@@ -722,7 +723,7 @@ plt.show()
 
 ### Lognormal distribution
 
-The **lognormal distribution** is a distribution on $\left(0, \infty\right)$ with density
+The [lognormal distribution](https://en.wikipedia.org/wiki/Log-normal_distribution) is a distribution on $\left(0, \infty\right)$ with density
 
 $$
 p(x) = \frac{1}{\sigma x \sqrt{2\pi}}
@@ -808,7 +809,7 @@ plt.show()
 
 ### Exponential distribution
 
-The **exponential distribution** is a distribution supported on $\left(0, \infty\right)$ with density
+The [exponential distribution](https://en.wikipedia.org/wiki/Exponential_distribution) is a distribution supported on $\left(0, \infty\right)$ with density
 
 $$
 p(x) = \lambda \exp \left( - \lambda x \right)
@@ -876,7 +877,7 @@ plt.show()
 
 ### Beta distribution
 
-The **beta distribution** is a distribution on $(0, 1)$ with density
+The [beta distribution](https://en.wikipedia.org/wiki/Beta_distribution) is a distribution on $(0, 1)$ with density
 
 $$
 p(x) = \frac{\Gamma(\alpha + \beta)}{\Gamma(\alpha) \Gamma(\beta)}
@@ -891,7 +892,7 @@ integrates to one.)
 This distribution has two parameters, $\alpha > 0$ and $\beta > 0$.
 
 It can be shown that, for this distribution, the mean is $\alpha / (\alpha + \beta)$ and 
-the variance is $\alpha \beta / (\alpha + \beta)^2 (\alpha + \beta + 1)$.
+the variance is $\alpha \beta / [(\alpha + \beta)^2 (\alpha + \beta + 1)]$.
 
 We can obtain the moments, PDF, and CDF of the Beta density as follows:
 
@@ -949,7 +950,7 @@ plt.show()
 
 ### Gamma distribution
 
-The **gamma distribution** is a distribution on $\left(0, \infty\right)$ with density
+The [gamma distribution](https://en.wikipedia.org/wiki/Gamma_distribution) is a distribution on $\left(0, \infty\right)$ with density
 
 $$
 p(x) = \frac{\beta^\alpha}{\Gamma(\alpha)}
@@ -1018,3 +1019,164 @@ ax.set_ylabel('CDF')
 plt.legend()
 plt.show()
 ```
+
+### Pareto distribution
+
+The [Pareto distribution](https://en.wikipedia.org/wiki/Pareto_distribution) is a distribution on $[\bar x, \infty)$ with density
+
+$$
+p(x) = \frac{\alpha \bar x^\alpha}{x^{\alpha + 1}}
+\qquad (x \geq \bar x)
+$$
+
+This distribution has two parameters: the minimum value $\bar x > 0$ and the tail index $\alpha > 0$.
+
+It is often easier to describe through the probability of exceeding a given value:
+
+$$
+\mathbb P\{X > x\} = \left( \frac{\bar x}{x} \right)^\alpha
+\qquad (x \geq \bar x)
+$$
+
+The Pareto distribution is closely related to the exponential distribution: if $Y$ is exponential with rate $\alpha$, then $\bar x \exp(Y)$ is Pareto with minimum $\bar x$ and tail index $\alpha$.
+
+Pareto distributions are widely used to describe the upper end of the income and wealth distributions, and we use one in {doc}`wealth_tax`.
+
+We can obtain the moments, PDF, and CDF of the Pareto density as follows:
+
+```{code-cell} ipython3
+α, x_bar = 3.0, 1.0
+u = scipy.stats.pareto(α, scale=x_bar)
+```
+
+```{code-cell} ipython3
+u.mean(), u.var()
+```
+
+These values agree with the formulas for the mean, $\alpha \bar x / (\alpha - 1)$, and the variance, $\alpha \bar x^2 / [(\alpha - 1)^2 (\alpha - 2)]$.
+
+However, the mean formula applies only when $\alpha > 1$ and the variance formula only when $\alpha > 2$.
+
+Otherwise the moment is infinite, unlike those of the other distributions we have studied.
+
+```{code-cell} ipython3
+u = scipy.stats.pareto(1.5, scale=x_bar)
+u.mean(), u.var()
+```
+
+```{code-cell} ipython3
+---
+mystnb:
+  figure:
+    caption: Densities of the Pareto distribution
+    name: fig:pareto-pdf
+---
+α_vals = [1, 2, 3]
+x_grid = np.linspace(1, 6, 200)
+
+fig, ax = plt.subplots()
+for α in α_vals:
+    u = scipy.stats.pareto(α, scale=x_bar)
+    ax.plot(x_grid, u.pdf(x_grid),
+    alpha=0.5, lw=2,
+    label=rf'$\alpha={α}$')
+ax.set_xlabel('x')
+ax.set_ylabel('PDF')
+plt.legend()
+plt.show()
+```
+
+```{code-cell} ipython3
+---
+mystnb:
+  figure:
+    caption: CDFs of the Pareto distribution
+    name: fig:pareto-cdf
+---
+fig, ax = plt.subplots()
+for α in α_vals:
+    u = scipy.stats.pareto(α, scale=x_bar)
+    ax.plot(x_grid, u.cdf(x_grid),
+    alpha=0.5, lw=2,
+    label=rf'$\alpha={α}$')
+    ax.set_ylim(0, 1)
+ax.set_xlabel('x')
+ax.set_ylabel('CDF')
+plt.legend()
+plt.show()
+```
+
+## Light and heavy tails
+
+The tails of a distribution describe how likely it is to produce values far from the center.
+
+Roughly speaking, a distribution is light-tailed if the probability of a large value falls at least exponentially fast as the value grows, and [heavy-tailed](https://en.wikipedia.org/wiki/Heavy-tailed_distribution) if it falls more slowly.
+
+The normal, exponential, beta and gamma distributions are light-tailed, while the lognormal and Pareto distributions are heavy-tailed.
+
+To see the difference, let's compare an exponential and a Pareto distribution with the same mean.
+
+```{code-cell} ipython3
+light = scipy.stats.expon(scale=3)
+heavy = scipy.stats.pareto(1.5, scale=1)
+
+light.mean(), heavy.mean()
+```
+
+This Pareto distribution is the one from above with infinite variance.
+
+Here are 500 draws from each distribution.
+
+```{code-cell} ipython3
+---
+mystnb:
+  figure:
+    caption: Draws from light- and heavy-tailed distributions
+    name: fig:light-heavy-draws
+---
+rng = np.random.default_rng(1234)
+n = 500
+
+fig, axes = plt.subplots(1, 2, sharey=True, figsize=(10, 4))
+for ax, u, title in zip(axes, (light, heavy), ('exponential', 'Pareto')):
+    draws = u.rvs(n, random_state=rng)
+    ax.vlines(range(n), 0, draws, lw=0.5)
+    ax.set_title(title)
+    ax.set_xlabel('draw')
+axes[0].set_ylabel('value')
+plt.show()
+```
+
+Most Pareto draws are small, but the largest is several times larger than any exponential draw, even though the two distributions have the same mean.
+
+The `sf` method, or survival function, gives the probability of exceeding a given value, which shows why.
+
+```{code-cell} ipython3
+for x in (10, 100, 1000):
+    print(f'x = {x:4}:  exponential {light.sf(x):.1e},  Pareto {heavy.sf(x):.1e}')
+```
+
+The next figure plots these probabilities on logarithmic scales, where the Pareto tail is a straight line and the exponential tail plunges toward zero.
+
+```{code-cell} ipython3
+---
+mystnb:
+  figure:
+    caption: Probability of exceeding x
+    name: fig:light-heavy-tails
+---
+x_grid = np.logspace(0, 2, 200)
+
+fig, ax = plt.subplots()
+ax.loglog(x_grid, light.sf(x_grid), lw=2, label='exponential')
+ax.loglog(x_grid, heavy.sf(x_grid), lw=2, label='Pareto')
+ax.set_ylim(1e-10, 2)
+ax.set_xlabel('x')
+ax.set_ylabel('probability of exceeding x')
+ax.legend()
+plt.show()
+```
+
+This difference matters in practice, since a few extreme observations can dominate a heavy-tailed sample.
+
+We return to this in {doc}`observed_distributions` and {doc}`heavy_tails`.

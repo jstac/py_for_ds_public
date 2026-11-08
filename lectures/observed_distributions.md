@@ -42,6 +42,8 @@ In addition to what's in Anaconda, this lecture needs the following library:
 We use the following imports.
 
 ```{code-cell} ipython3
+import os
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -111,39 +113,45 @@ plt.show()
 
 This histogram is far more symmetric.
 
-Our next example runs in the opposite direction.
-
-The next cell reads the number of deaths in Japan in 2023 at each single year of age, from the [World Population Prospects](https://population.un.org/wpp/) of the United Nations.
+For a second example, let's look at the GDP of each country in 2025, in US dollars, from the [World Bank](https://data.worldbank.org/indicator/NY.GDP.MKTP.CD).
 
 ```{code-cell} ipython3
-url = ('https://github.com/QuantEcon/data-lectures/raw/main/'
-       'lectures/japan_deaths_by_age.csv')
-deaths = pd.read_csv(url)
-deaths.tail()
+path = '_static/lecture_specific/observed_distributions/gdp_by_country_2025.csv'
+url = ('https://raw.githubusercontent.com/jstac/py_for_ds_public/main/lectures/'
+       + path)
+
+# use the copy stored with this book if there is one, and otherwise download it
+gdp = pd.read_csv(path if os.path.exists(path) else url)
+gdp.head()
 ```
 
-Since the data arrive as counts at each age, we pass the counts to `hist` as weights, using one bin for each age.
+Here are histograms of GDP and of its logarithm, showing the number of countries in each bin.
+
+We use base 10 logarithms, so each unit on the horizontal axis of the right-hand panel is a factor of ten.
 
 ```{code-cell} ipython3
 ---
 mystnb:
   figure:
-    caption: Deaths in Japan by age, 2023
-    name: fig:deaths-hist
+    caption: GDP by country, 2025
+    name: fig:gdp-hist
 ---
-fig, ax = plt.subplots()
-ax.hist(deaths['age'], bins=np.arange(-0.5, 101.5),
-        weights=deaths['deaths_total'] / 1000)
-ax.set_xlabel('age at death')
-ax.set_ylabel('deaths (thousands)')
+log_gdp = np.log10(gdp['gdp_usd'])
+
+fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+axes[0].hist(gdp['gdp_usd'] / 1e12, bins=50)
+axes[0].set_xlabel('GDP (trillions of US$)')
+axes[0].set_ylabel('number of countries')
+axes[1].hist(log_gdp, bins=25)
+axes[1].set_xlabel('log10 of GDP (US$)')
 plt.show()
 ```
 
-Deaths cluster at high ages, with a long tail running down towards zero --- the mirror image of the house price data.
+The United States and China, at about 31 and 20 trillion dollars, are so much larger than the rest that they stretch the horizontal axis, and 161 of the 186 countries fall in the first bin.
 
-The last bar is taller than its neighbors because it is recorded as "100 and over", so it counts every death above age 100, not just deaths at age 100.
+The right tail is even longer than for house prices.
 
-Checking for artifacts like this is an important part of looking at data.
+On a log scale, the distribution is close to symmetric.
 
 
 ## Sample moments and quantiles
@@ -265,7 +273,46 @@ The skewness is now almost exactly zero.
 
 In other words, the *logarithm* of the sale price looks far more symmetric than the sale price itself, as it would if prices were lognormal.
 
-For the deaths data, we first expand the counts into a data set with one observation per death.
+The GDP data are more extreme still, with skewness close to zero only after taking logs.
+
+```{code-cell} ipython3
+scipy.stats.skew(gdp['gdp_usd']), scipy.stats.skew(log_gdp)
+```
+
+Our last example runs in the opposite direction.
+
+The next cell reads the number of deaths in Japan in 2023 at each single year of age, from the [World Population Prospects](https://population.un.org/wpp/) of the United Nations.
+
+```{code-cell} ipython3
+url = ('https://github.com/QuantEcon/data-lectures/raw/main/'
+       'lectures/japan_deaths_by_age.csv')
+deaths = pd.read_csv(url)
+deaths.tail()
+```
+
+Since the data are counts at each age, a bar chart shows the distribution directly.
+
+```{code-cell} ipython3
+---
+mystnb:
+  figure:
+    caption: Deaths in Japan by age, 2023
+    name: fig:deaths-bar
+---
+fig, ax = plt.subplots()
+ax.bar(deaths['age'], deaths['deaths_total'] / 1000)
+ax.set_xlabel('age at death')
+ax.set_ylabel('deaths (thousands)')
+plt.show()
+```
+
+Deaths cluster at high ages, with a long tail running down towards zero --- the mirror image of the house price data.
+
+The last bar is taller than its neighbors because it is recorded as "100 and over", so it counts every death above age 100, not just deaths at age 100.
+
+Checking for artifacts like this is an important part of looking at data.
+
+To compute statistics, we first expand the counts into a data set with one observation per death.
 
 ```{code-cell} ipython3
 age_at_death = np.repeat(deaths['age'], deaths['deaths_total'])
@@ -276,7 +323,7 @@ len(age_at_death)
 scipy.stats.skew(age_at_death), scipy.stats.kurtosis(age_at_death)
 ```
 
-Now the skewness is large and *negative*, matching the long left tail in the histogram.
+Now the skewness is large and *negative*, matching the long left tail in the bar chart.
 
 
 ### Sample quantiles

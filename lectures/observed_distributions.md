@@ -48,9 +48,11 @@ np.set_printoptions(legacy='1.25')
 
 ## Histograms
 
-Given a new data set on a single variable, the first thing we usually want to do is look at it.
+Suppose we have a new data set on a single variable.
 
-The standard way is via a [histogram](https://en.wikipedia.org/wiki/Histogram), which divides the data into bins and shows how many observations fall in each.
+A natural first step is to visualize it without adding any assumptions.
+
+A standard way to do this is via a [histogram](https://en.wikipedia.org/wiki/Histogram), which divides the data into bins and shows how many observations fall in each.
 
 Let's start with the sale prices of 2,930 houses sold in Ames, Iowa between 2006 and 2010, which come with a few characteristics of each house {cite}`decock2011ames`.
 
@@ -80,7 +82,7 @@ plt.show()
 
 The data have a long right tail: a small number of houses sell for far more than the typical price.
 
-Data like this often look more symmetric after taking logarithms.
+Data like this often look more symmetric after taking logarithms:
 
 ```{code-cell} ipython3
 ---
@@ -98,7 +100,6 @@ ax.set_ylabel('density')
 plt.show()
 ```
 
-This histogram is far more symmetric.
 
 For a second example, let's look at the GDP of each country in 2025, in US dollars, from the [World Bank](https://data.worldbank.org/indicator/NY.GDP.MKTP.CD).
 
@@ -143,9 +144,9 @@ On a log scale, the distribution is close to symmetric.
 
 ## Sample moments and quantiles
 
-Histograms show us the shape of a data set, and we often want to summarize that shape with a few numbers as well.
+A common next step is to summarize the data using sample moments and quantiles.
 
-We start with sample moments, which are averages of powers of the data, and then turn to sample quantiles.
+We start with sample moments.
 
 
 ### Sample mean and variance
@@ -169,25 +170,22 @@ and the sample standard deviation $s$ is its square root.
 For example, suppose that we observe the income of 10 people during one year:
 
 ```{code-cell} ipython3
-data = [['Hiroshi', 1200],
-        ['Ako', 1210],
-        ['Emi', 1400],
-        ['Daiki', 990],
-        ['Chiyo', 1530],
-        ['Taka', 1210],
-        ['Katsuhiko', 1240],
-        ['Daisuke', 1124],
-        ['Yoshi', 1330],
-        ['Rie', 1340]]
-
-df = pd.DataFrame(data, columns=['name', 'income'])
-df
+income = pd.Series({'Hiroshi': 1200,
+                    'Ako': 1210,
+                    'Emi': 1400,
+                    'Daiki': 990,
+                    'Chiyo': 1530,
+                    'Taka': 1210,
+                    'Katsuhiko': 1240,
+                    'Daisuke': 1124,
+                    'Yoshi': 1330,
+                    'Rie': 1340}, name='income')
+income
 ```
 
 Here we compute the sample mean and sample variance, as well as the sample standard deviation.
 
 ```{code-cell} ipython3
-income = df['income']
 income.mean(), income.var(ddof=0), income.std(ddof=0)
 ```
 
@@ -218,7 +216,13 @@ $$
 \hat K = \frac{1}{n} \sum_{i=1}^n \left( \frac{x_i - \bar x}{s} \right)^4
 $$
 
-The sample excess kurtosis is $\hat K - 3$.
+Like their population counterparts in {doc}`prob_dist`, they describe the shape of the data.
+
+The sample skewness measures asymmetry: it is positive when the data have a long right tail, negative when they have a long left tail, and zero when they are symmetric about their mean.
+
+The sample kurtosis measures how much of the data lies far out in the tails: it is large when extreme values, many standard deviations from the mean, make up a relatively large part of the data.
+
+The sample [excess kurtosis](https://en.wikipedia.org/wiki/Kurtosis#Excess_kurtosis) is $\hat K - 3$, which measures the kurtosis relative to that of a normal distribution.
 
 Recall from {doc}`prob_dist` that a normal distribution has skewness zero and excess kurtosis zero.
 
@@ -323,7 +327,7 @@ Not every useful summary statistic is a moment.
 
 If we sort the observations from smallest to largest, then the sample $\tau$-quantile is the value below which a fraction $\tau$ of the observations fall.
 
-The 0.5 quantile is the sample median and the 0.25 and 0.75 quantiles are the first and third sample quartiles.
+The 0.5 quantile is the [sample median](https://en.wikipedia.org/wiki/Median#Finite_set_of_numbers) and the 0.25 and 0.75 quantiles are the first and third [sample quartiles](https://en.wikipedia.org/wiki/Quartile).
 
 Here are these values for the income data:
 
@@ -337,7 +341,7 @@ To see this, let's replace the largest income in our data set with a very large 
 
 ```{code-cell} ipython3
 income_outlier = income.copy()
-income_outlier.iloc[income.argmax()] = 10_000_000
+income_outlier[income.idxmax()] = 10_000_000   # Chiyo, the highest earner
 
 income.mean(), income_outlier.mean()
 ```
@@ -358,7 +362,7 @@ price.mean(), price.median()
 
 The mean exceeds the median by around 13%, pulled up by the expensive houses in the right tail.
 
-This is why house prices are almost always reported as medians.
+House prices are usually reported as medians, because the median is more useful to a typical buyer, who is not looking at the top end of the market.
 
 For the age at death data the inequality runs the other way.
 

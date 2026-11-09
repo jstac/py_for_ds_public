@@ -921,8 +921,6 @@ Argentina's GDP per capita is now far too low, because India and the United Stat
 
 Nothing warned us: the code ran, the result looks like any other table, and no missing values remain to show that something was changed.
 
-An earlier version of this lecture made this mistake in its GDP per capita plot.
-
 Filling in a missing value is a modeling choice, and every number computed from that value inherits its error.
 
 ## Online data sources

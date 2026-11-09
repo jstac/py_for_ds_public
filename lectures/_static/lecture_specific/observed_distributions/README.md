@@ -11,3 +11,12 @@
   names and codes are the World Bank's own.
 - **Gaps:** 31 economies had no 2025 value at retrieval, mostly small territories but
   also Afghanistan, Cuba and Eritrea.
+
+`amazon_monthly_close.csv` holds the monthly closing price of Amazon shares (AMZN), in
+US dollars, from January 2000 to December 2023, one row per month.
+
+- **Source:** Yahoo Finance, retrieved 10 November 2026 with `yfinance` 1.8.0 via
+  `yf.download('AMZN', '2000-1-1', '2024-1-1', interval='1mo')`, column `Close`.
+- **Changes:** prices are adjusted for stock splits (yfinance's default `auto_adjust=True`)
+  and rounded to six decimal places. Stored here so that the lecture does not depend on a
+  live download.

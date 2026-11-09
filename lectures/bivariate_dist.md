@@ -16,8 +16,6 @@ kernelspec:
 ```{index} single: Bivariate Distributions
 ```
 
-## Outline
-
 The lectures {doc}`prob_dist` and {doc}`observed_distributions` study a single variable at a time (e.g., a distribution of house prices).
 
 Often we are interested in how two variables relate to each other.

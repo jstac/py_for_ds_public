@@ -16,16 +16,6 @@ kernelspec:
 ```{index} single: Python; Pandas
 ```
 
-In addition to what’s in Anaconda, this lecture needs the following library:
-
-```{code-cell} ipython3
-:tags: [hide-output]
-
-!pip install --upgrade wbgapi
-```
-
-## Overview
-
 [pandas](https://pandas.pydata.org/) is the standard library for working with tables of data in Python.
 
 AI tools are trained on masses of pandas code, and most of what you do with AI and data in Python will involve substantial amounts of it.
@@ -49,6 +39,14 @@ Rather, it is a tool for simple data analysis and a foundation for many other pa
 ```
 
 This lecture gives a fast-paced introduction to pandas.
+
+In addition to what’s in Anaconda, this lecture needs the following library:
+
+```{code-cell} ipython3
+:tags: [hide-output]
+
+!pip install --upgrade wbgapi
+```
 
 We use the following imports.
 

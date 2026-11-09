@@ -16,8 +16,6 @@ kernelspec:
 ```{index} single: Common Distributions
 ```
 
-## Outline
-
 In data science applications, we are often interested in data on a specific variable.
 
 In this lecture we give a quick introduction to probability distributions using Python.

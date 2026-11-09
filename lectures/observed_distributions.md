@@ -153,7 +153,7 @@ We start with sample moments.
 
 Suppose we have a data set with values $\{x_1, \ldots, x_n\}$.
 
-The [sample mean](https://en.wikipedia.org/wiki/Sample_mean_and_covariance) of this distribution is defined as
+The [sample mean](https://en.wikipedia.org/wiki/Sample_mean_and_covariance) of this data set is defined as
 
 $$
     \bar x = \frac{1}{n} \sum_{i=1}^n x_i
@@ -374,7 +374,9 @@ Here the mean is pulled *below* the median, by deaths at young ages.
 
 In general, the mean sits on the side of the median towards which the data are skewed.
 
-The gap can be far larger for wealth, which has a very long right tail.
+### Weighted data: household wealth
+
+The gap between mean and median can be far larger for wealth, which has a very long right tail.
 
 The next cell reads the net worth of US households in 2022, from the Federal Reserve's [Survey of Consumer Finances](https://en.wikipedia.org/wiki/Survey_of_Consumer_Finances).
 
@@ -388,6 +390,28 @@ wealth.head()
 The survey deliberately includes extra wealthy households, since a random sample would contain very few of them.
 
 To compensate, each row has a weight `wgt`, which is the number of US households that the row represents, and we use these weights when computing statistics.
+
+If row $i$ has net worth $x_i$ and weight $w_i$, then the weighted mean is
+
+$$
+\bar x_w = \frac{\sum_{i=1}^n w_i x_i}{\sum_{i=1}^n w_i}
+$$
+
+If the weights were whole numbers, this would be the ordinary mean of a data set in which each $x_i$ is repeated $w_i$ times.
+
+Equivalently, it is the mean of the distribution that puts probability $w_i / \sum_j w_j$ on $x_i$, in place of the equal probabilities $1/n$ behind the sample mean.
+
+For the weighted median, we sort the rows so that $x_{(1)} \leq x_{(2)} \leq \cdots \leq x_{(n)}$, keeping each weight with its row, and write $w_{(j)}$ for the weight of the row with value $x_{(j)}$.
+
+The weighted median is $x_{(k)}$, where $k$ is the smallest index such that
+
+$$
+\sum_{j=1}^k w_{(j)} \geq \frac{1}{2} \sum_{j=1}^n w_j
+$$
+
+In other words, it is the smallest value such that at least half of all households, counted by weight, have net worth at or below it.
+
+In the next cell, NumPy's `average` computes the weighted mean, and the function `weighted_median` implements this rule.
 
 ```{code-cell} ipython3
 def weighted_median(values, weights):
@@ -876,6 +900,8 @@ Second, having chosen a class, we must choose the parameters within it that make
 
 We start with the parameters, since we have to be able to fit a class before we can judge it.
 
+We fit parameters by the method of moments and apply this to house prices, then develop Q-Q plots as a tool for comparing fits, and use them to choose a class for the house price data.
+
 ### The method of moments
 
 One simple and general strategy is the [method of moments](https://en.wikipedia.org/wiki/Method_of_moments_(statistics)).
@@ -888,11 +914,26 @@ If the class has $k$ parameters, we
 
 In effect we are asking the distribution to reproduce the features of the data that we consider most important.
 
-We have already used this idea once, in {doc}`prob_dist`, when we fitted a normal distribution to the heights of US adults.
+When the class has two parameters, as in the examples below, we match the sample mean $\bar x$ and the sample variance $s^2$.
 
-The normal distribution has two parameters, so we used two moments: we set $\mu$ equal to the sample mean and $\sigma$ equal to the sample standard deviation.
+```{prf:example} Normal
+:label: obs_mom_normal
 
-Let's apply the same idea to the house price data, using two classes that live on $(0, \infty)$ and hence respect the fact that prices are positive.
+The normal distribution has parameters $\mu$ and $\sigma$, with mean $\mu$ and variance $\sigma^2$.
+
+Matching moments gives
+
+$$
+\hat \mu = \bar x
+\qquad \text{and} \qquad
+\hat \sigma = s
+$$
+
+We used this fit in {doc}`prob_dist`, for the heights of US adults.
+```
+
+```{prf:example} Lognormal
+:label: obs_mom_lognormal
 
 The lognormal distribution has parameters $\mu$ and $\sigma$, with
 
@@ -902,23 +943,28 @@ $$
 \mathbb{V}[X] = \left[ \exp(\sigma^2) - 1 \right] \exp(2\mu + \sigma^2)
 $$
 
-Setting these equal to the sample mean $\bar x$ and sample variance $s^2$ and solving gives
+Setting these equal to $\bar x$ and $s^2$ and solving gives
 
 $$
 \hat \sigma^2 = \ln \left( 1 + \frac{s^2}{\bar x^2} \right)
 \qquad \text{and} \qquad
 \hat \mu = \ln \bar x - \frac{\hat \sigma^2}{2}
 $$
+```
+
+```{prf:example} Gamma
+:label: obs_mom_gamma
 
 The gamma distribution has parameters $\alpha$ and $\beta$, with mean $\alpha / \beta$ and variance $\alpha / \beta^2$.
 
-Solving in the same way is easier here:
+Setting these equal to $\bar x$ and $s^2$ and solving gives
 
 $$
 \hat \alpha = \frac{\bar x^2}{s^2}
 \qquad \text{and} \qquad
 \hat \beta = \frac{\bar x}{s^2}
 $$
+```
 
 Let's implement all three fits.
 
@@ -939,7 +985,18 @@ def fit_gamma(sample):
 
 Each function returns a distribution object of the kind we worked with in {doc}`prob_dist`.
 
-Let's check that the fitted lognormal reproduces the mean of the data, as it was constructed to do.
+(observed_distributions:house_prices)=
+### Application: house prices
+
+Let's apply these ideas to the Ames house prices that we met at the start of the lecture, which serve as our running example for the rest of this section.
+
+Recall from {numref}`fig:price-hist` that prices are positive and have a long right tail.
+
+This makes the lognormal and gamma distributions natural candidates, since they live on $(0, \infty)$ and can be right-skewed.
+
+We fit the normal distribution as well, for comparison.
+
+First, let's check that the fitted lognormal reproduces the mean of the data, as it was constructed to do.
 
 ```{code-cell} ipython3
 u = fit_lognormal(price)
@@ -975,7 +1032,7 @@ The normal density is visibly wrong: it is symmetric, while the data are not, an
 
 The other two look plausible.
 
-To choose between them we need something sharper than a glance at a figure.
+To choose between them we need something sharper than a glance at a figure, and the next subsection provides one.
 
 ### Q-Q plots
 
@@ -1109,27 +1166,33 @@ plt.show()
 
 The points lie almost exactly on the line, apart from mild wandering at the two ends, where the sample contains few observations and the quantile estimates are noisy.
 
-Now let's try the log house prices.
+Now let's try the logarithm of GDP across countries, which looked close to symmetric in {numref}`fig:gdp-hist`.
 
 ```{code-cell} ipython3
 ---
 mystnb:
   figure:
-    caption: Log house prices against a fitted normal
-    name: fig:qq-log-prices
+    caption: Log GDP against a fitted normal
+    name: fig:qq-log-gdp
 ---
 fig, ax = plt.subplots()
-qq_plot(log_price, fit_normal(log_price), ax)
+qq_plot(log_gdp, fit_normal(log_gdp), ax)
 plt.show()
 ```
 
-The points lie close to the line through most of the distribution, confirming what the sample skewness told us.
+The points lie close to the line throughout, consistent with the sample skewness of almost zero that we found for log GDP.
 
-The main departure is at the bottom, where a few very cheap houses sold for less than the fitted normal predicts.
+In other words, GDP across countries is roughly lognormal.
 
-### Choosing a parametric class
+At the top, the largest economies sit slightly below the line, so the upper tail is a little thinner than the fitted normal predicts.
 
-We can now compare candidate classes by fitting each one and looking at its Q-Q plot.
+### Back to the house price data
+
+In {ref}`our application <observed_distributions:house_prices>`, we fitted three classes to house prices, but a glance at the densities could not tell us whether the lognormal or the gamma fits better.
+
+Q-Q plots let us decide, which answers the first part of our question: choosing a parametric class.
+
+Here is the Q-Q plot for each of the three fits.
 
 ```{code-cell} ipython3
 ---
@@ -1169,9 +1232,9 @@ Third, the winner is only the best of the candidates we happened to try.
 
 Nothing here tells us that the winning class is a good description of the data --- only that it is better than the alternatives.
 
-### When the normal fails
+### Application: asset returns
 
-Let's see what a failure of the normal distribution looks like in a case where the data take both signs, so that classes on $(0, \infty)$ are not available.
+As a second application, let's see how the normal distribution fares with data that take both signs, so that classes on $(0, \infty)$ are not available.
 
 We look at the monthly return on Amazon shares between 2000 and 2024, measured as the percent change in the share price over each month, using closing prices from [Yahoo Finance](https://finance.yahoo.com/quote/AMZN/history/) that are adjusted for stock splits.
 
@@ -1333,7 +1396,7 @@ qq_plot(age_at_death, fit_normal(age_at_death), ax)
 plt.show()
 ```
 
-The points bend downwards, which is the mirror image of the house price figure.
+The points bend downwards, which is the mirror image of the normal panel in {numref}`fig:qq-price-classes`.
 
 At the left-hand end the sample quantiles fall well below the fitted ones, because the data have a long left tail of deaths at young ages that the normal distribution cannot reproduce.
 

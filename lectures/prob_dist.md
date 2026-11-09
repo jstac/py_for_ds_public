@@ -615,6 +615,7 @@ F(x) = \mathbb P\{X \leq x\}
         = \int_{-\infty}^x p(y) dy
 $$
 
+(prob_dist:quantile_function)=
 For the continuous distributions we study below, $F$ is strictly increasing, so it has an inverse $F^{-1}$, which is called the [quantile function](https://en.wikipedia.org/wiki/Quantile_function).
 
 Given $\tau \in (0,1)$, the value $q_\tau = F^{-1}(\tau)$ is called the $\tau$-th [quantile](https://en.wikipedia.org/wiki/Quantile) of the distribution.

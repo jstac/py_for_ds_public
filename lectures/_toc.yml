@@ -13,8 +13,8 @@ parts:
   chapters:
   - file: prob_dist
   - file: observed_distributions
-  - file: bivariate_dist
   - file: mle_intro
+  - file: bivariate_dist
   - file: bayes_intro
 - caption: Prediction
   numbered: true

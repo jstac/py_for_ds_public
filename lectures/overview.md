@@ -358,6 +358,7 @@ Colab is the easiest way to start, since there is nothing to install.
 A local installation is better if you plan to use Python regularly, or if you work with data that should not leave your computer.
 
 
+(overview:colab)=
 ### Google Colab
 
 [Google Colab](https://colab.research.google.com/) is a [hosted Jupyter notebook service](https://research.google.com/colaboratory/faq.html) that runs in your browser.
@@ -392,7 +393,7 @@ First, keep your own copy of anything you upload to or create on the server, sin
 
 Second, using Colab means sending your code and data to Google, so think before uploading anything confidential.
 
-We return to that point below, when we discuss the role of AI.
+We return to that point {ref}`below <overview:confidentiality>`, when we discuss the role of AI.
 
 
 ### Local installation
@@ -535,6 +536,7 @@ In fact the opposite is true: policy is one of the areas where human judgment wi
 ```
 
 
+(overview:confidentiality)=
 ### Confidentiality
 
 Most AI tools run on a company's servers, so anything you type or upload leaves your computer.

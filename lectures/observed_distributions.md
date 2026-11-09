@@ -22,9 +22,7 @@ In {doc}`prob_dist` we studied probability distributions, which are one componen
 
 In this lecture we turn to observed data --- sets of numbers that we measure or collect.
 
-Sometimes we refer to observed data or measurements as "distributions".
-
-What is the connection between these observed distributions and theoretical probability distributions?
+What is the connection between these data and probability distributions?
 
 In this lecture we attempt to answer this question. 
 
@@ -61,9 +59,9 @@ np.set_printoptions(legacy='1.25')
 
 ## Histograms
 
-With a new data set on a single variable, the first thing we usually want to do is look at it.
+Given a new data set on a single variable, the first thing we usually want to do is look at it.
 
-The standard way is a [histogram](https://en.wikipedia.org/wiki/Histogram), which divides the data into bins and shows how many observations fall in each.
+The standard way is via a [histogram](https://en.wikipedia.org/wiki/Histogram), which divides the data into bins and shows how many observations fall in each.
 
 Let's start with the sale prices of 2,930 houses sold in Ames, Iowa between 2006 and 2010, which come with a few characteristics of each house {cite}`decock2011ames`.
 
@@ -158,7 +156,28 @@ On a log scale, the distribution is close to symmetric.
 
 Histograms show us the shape of a data set, and we often want to summarize that shape with a few numbers as well.
 
-To begin, let's say we observe the income of 10 people over a year:
+We start with sample moments, which are averages of powers of the data, and then turn to sample quantiles.
+
+
+### Sample mean and variance
+
+Suppose we have a data set with values $\{x_1, \ldots, x_n\}$.
+
+The [sample mean](https://en.wikipedia.org/wiki/Sample_mean_and_covariance) of this distribution is defined as
+
+$$
+    \bar x = \frac{1}{n} \sum_{i=1}^n x_i
+$$
+
+The [sample variance](https://en.wikipedia.org/wiki/Variance#Sample_variance) is defined as
+
+$$
+    s^2 = \frac{1}{n} \sum_{i=1}^n (x_i - \bar x)^2
+$$
+
+and the sample standard deviation $s$ is its square root.
+
+For example, suppose that we observe the income of 10 people during one year:
 
 ```{code-cell} ipython3
 data = [['Hiroshi', 1200],
@@ -176,41 +195,20 @@ df = pd.DataFrame(data, columns=['name', 'income'])
 df
 ```
 
-In this situation, we might refer to the set of their incomes as the "income distribution."
-
-The terminology is confusing because this set is not a {doc}`probability distribution <prob_dist>` --- it's just a collection of numbers.
-
-However, as we will see, the two ideas are closely connected.
-
-
-### Sample mean and variance
-
-We begin with numbers that summarize a data set.
-
-Suppose we have an observed distribution with values $\{x_1, \ldots, x_n\}$.
-
-The [sample mean](https://en.wikipedia.org/wiki/Sample_mean_and_covariance) of this distribution is defined as
-
-$$
-    \bar x = \frac{1}{n} \sum_{i=1}^n x_i
-$$
-
-The [sample variance](https://en.wikipedia.org/wiki/Variance#Sample_variance) is defined as
-
-$$
-    s^2 = \frac{1}{n} \sum_{i=1}^n (x_i - \bar x)^2
-$$
-
-and the sample standard deviation $s$ is its square root.
-
-For the income distribution given above, we can calculate these numbers via
+Here we compute the sample mean and sample variance, as well as the sample standard deviation.
 
 ```{code-cell} ipython3
 income = df['income']
-income.mean(), income.var(), income.std()
+income.mean(), income.var(ddof=0), income.std(ddof=0)
 ```
 
-(pandas divides by $n-1$ rather than $n$ when computing the variance, so its answer differs slightly from the formula, and the difference is small when $n$ is large.)
+```{note}
+By default, pandas divides by $n-1$ rather than $n$ when computing the variance and standard deviation.
+
+Setting `ddof=0` makes it divide by $n$, as in the formula above.
+
+The difference is small when $n$ is large.
+```
 
 Notice that these sample moments have a clear connection to the population moments defined in {doc}`prob_dist`.
 
@@ -220,6 +218,7 @@ distribution that puts equal probability $1/n$ on each observed outcome $x_i$.
 The sample moments discussed below also follow this pattern.
 
 
+(observed_distributions:higher_moments)=
 ### Higher sample moments
 
 The **sample skewness** and **sample kurtosis** are
@@ -236,9 +235,11 @@ Recall from {doc}`prob_dist` that a normal distribution has skewness zero and ex
 
 This gives us one way to ask whether a data set looks normal.
 
-Let's try it on the heights of US adult women, which we saw were well described by a normal distribution.
+Let's try it on the heights of US adult women, which we saw in {numref}`fig:us-heights-fit` were well described by a normal distribution.
 
-(Below, `scipy.stats.kurtosis` returns the excess kurtosis.)
+```{note}
+`scipy.stats.kurtosis` returns the excess kurtosis.
+```
 
 ```{code-cell} ipython3
 url = ('https://github.com/QuantEcon/data-lectures/raw/main/'
@@ -261,7 +262,7 @@ The skewness is large and positive, which is how it registers the long right tai
 
 The excess kurtosis is also large, telling us that extreme values are much more common than they would be for a normal distribution.
 
-We saw exactly this combination in {doc}`prob_dist` when we looked at the lognormal distribution.
+We saw exactly this combination in {doc}`prob_dist` when we looked at the {ref}`lognormal distribution <prob_dist:lognormal>`.
 
 For the log prices, the numbers match the more symmetric histogram.
 
@@ -326,6 +327,7 @@ scipy.stats.skew(age_at_death), scipy.stats.kurtosis(age_at_death)
 Now the skewness is large and *negative*, matching the long left tail in the bar chart.
 
 
+(observed_distributions:quantiles)=
 ### Sample quantiles
 
 Not every useful summary statistic is a moment.
@@ -390,7 +392,7 @@ wealth = pd.read_csv(url)
 wealth.head()
 ```
 
-The survey deliberately includes many wealthy households, so that it can measure the top of the distribution well.
+The survey deliberately includes extra wealthy households, since a random sample would contain very few of them.
 
 To compensate, each row has a weight `wgt`, which is the number of US households that the row represents, and we use these weights when computing statistics.
 
@@ -413,6 +415,8 @@ mean_wealth, median_wealth
 Mean wealth is more than five times median wealth.
 
 So the "average" household is much wealthier than a typical one, and a policy discussion needs to be clear about which it means.
+
+The true gap is a little larger still, because the survey leaves out the very richest households, such as the [Forbes 400](https://en.wikipedia.org/wiki/Forbes_400), a point we return to in {doc}`wealth_tax`.
 
 Similar gaps appear across countries, as this [ranking by average and median wealth](https://www.visualcapitalist.com/ranked-the-richest-countries-by-average-and-median-wealth/) shows.
 
@@ -570,7 +574,7 @@ The KDE traces out the shape of the histogram while smoothing away the bin-to-bi
 
 ### Box-and-whisker plots
 
-A [box-and-whisker plot](https://en.wikipedia.org/wiki/Box_plot) (or box plot) summarizes a distribution using the sample quantiles discussed above.
+A [box-and-whisker plot](https://en.wikipedia.org/wiki/Box_plot) (or box plot) summarizes a distribution using the {ref}`sample quantiles <observed_distributions:quantiles>` discussed above.
 
 The box spans the first and third quartiles, and the line inside it is the median.
 
@@ -763,7 +767,7 @@ What matters is that new observations keep bringing new information, which the e
 
 The second condition for the LLN is a finite mean.
 
-This matters because, as we saw in {doc}`prob_dist`, heavy-tailed distributions can have infinite moments.
+This matters because, as we saw in {doc}`prob_dist`, {ref}`heavy-tailed distributions <prob_dist:tails>` can have infinite moments.
 
 Let's run a simulation with three distributions, each sampled independently:
 
@@ -1044,7 +1048,7 @@ The gamma does better, but its points still rise above the line at the top, so i
 
 The lognormal comes closest, with the points near the line almost everywhere.
 
-This agrees with what we found earlier, where taking logs of the prices produced a sample skewness of almost zero.
+This agrees with what we found {ref}`earlier <observed_distributions:higher_moments>`, where taking logs of the prices produced a sample skewness of almost zero.
 
 Three warnings are in order.
 

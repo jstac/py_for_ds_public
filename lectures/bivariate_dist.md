@@ -150,7 +150,7 @@ $$
 
 ## The bivariate normal distribution
 
-Just as the normal distribution is the workhorse univariate distribution, the [bivariate normal distribution](https://en.wikipedia.org/wiki/Multivariate_normal_distribution) is the workhorse joint distribution.
+Just as the {ref}`normal distribution <prob_dist:normal>` is the workhorse univariate distribution, the [bivariate normal distribution](https://en.wikipedia.org/wiki/Multivariate_normal_distribution) is the workhorse joint distribution.
 
 It has five parameters: the two means $\mu_X, \mu_Y$, the two standard deviations $\sigma_X, \sigma_Y$, and the correlation $\rho \in (-1,1)$, which we define below.
 

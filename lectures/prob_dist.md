@@ -70,7 +70,7 @@ plt.show()
 
 Each histogram has the familiar "bell" shape.
 
-This suggests that we can approximate the data using a [normal distribution](https://en.wikipedia.org/wiki/Normal_distribution) --- a continuous distribution with a bell-shaped density that we study in detail below.
+This suggests that we can approximate the data using a [normal distribution](https://en.wikipedia.org/wiki/Normal_distribution) --- a continuous distribution with a bell-shaped density that we study in detail {ref}`below <prob_dist:normal>`.
 
 To do so, we fit a normal distribution to each dataset, choosing its mean and standard deviation to match the sample mean and standard deviation of the heights.
 
@@ -632,6 +632,7 @@ These alternatives are useful because, unlike the mean and the standard deviatio
 (We will see in {doc}`heavy_tails` that this robustness matters a great deal for some data sets.)
 
 
+(prob_dist:normal)=
 ### Normal distribution
 
 Perhaps the most famous distribution is the normal distribution, which has density
@@ -721,6 +722,7 @@ plt.legend()
 plt.show()
 ```
 
+(prob_dist:lognormal)=
 ### Lognormal distribution
 
 The [lognormal distribution](https://en.wikipedia.org/wiki/Log-normal_distribution) is a distribution on $\left(0, \infty\right)$ with density
@@ -1106,6 +1108,7 @@ plt.legend()
 plt.show()
 ```
 
+(prob_dist:tails)=
 ## Light and heavy tails
 
 The tails of a distribution describe how likely it is to produce values far from the center.

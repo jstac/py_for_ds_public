@@ -536,7 +536,7 @@ In this section we look at the main types of AI coding tool, a basic workflow fo
 
 AI coding tools come in three main forms.
 
-* *Assistants inside the notebook*, such as the AI in Google Colab and [GitHub Copilot](https://en.wikipedia.org/wiki/GitHub_Copilot), suggest and explain code as you work.
+* *Assistants inside the notebook*, such as the AI in {ref}`Google Colab <overview:colab>` and [GitHub Copilot](https://en.wikipedia.org/wiki/GitHub_Copilot), suggest and explain code as you work.
 * *Chat apps*, such as ChatGPT, [Claude](https://en.wikipedia.org/wiki/Claude_(language_model)) and Gemini, answer questions and write code that you then copy and run.
 * *End-to-end tools* can write code, run it and fix errors with little supervision.
 
@@ -546,7 +546,7 @@ If you do not have one, the course's free fallback is the AI built into Colab.
 
 In class we will briefly demonstrate Claude and the AI in Colab.
 
-Before using any of them, read the discussion of confidentiality in {doc}`overview`.
+Before using any of them, read the {ref}`discussion of confidentiality <overview:confidentiality>` in {doc}`overview`.
 
 ### A basic workflow
 

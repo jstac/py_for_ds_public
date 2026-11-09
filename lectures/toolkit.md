@@ -159,7 +159,7 @@ Most policy work runs perfectly well on a laptop CPU, but it helps to know which
 | [JAX](https://docs.jax.dev/en/latest/installation.html) | Fast array calculations in the style of NumPy | CPU, GPU, TPU |
 | [NumPyro](https://num.pyro.ai/) | Bayesian analysis | CPU, GPU (built on JAX) |
 
-Google Colab offers access to GPUs and TPUs, and you can try them under Runtime, then Change runtime type.
+{ref}`Google Colab <overview:colab>` offers access to GPUs and TPUs, and you can try them under Runtime, then Change runtime type.
 
 ## NumPy
 

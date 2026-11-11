@@ -1,5 +1,7 @@
 # Data for the toolkit lecture
 
+The lecture reads this file from this repository on GitHub.
+
 `japan_prefectures.geojson` holds simplified boundaries and 2020 population for
 Japan's 47 prefectures.
 

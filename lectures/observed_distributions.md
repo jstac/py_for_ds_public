@@ -30,8 +30,6 @@ determine which probability distribution best describes a given data set.
 We use the following imports.
 
 ```{code-cell} ipython3
-import os
-
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -104,12 +102,9 @@ plt.show()
 For a second example, let's look at the GDP of each country in 2025, in US dollars, from the [World Bank](https://data.worldbank.org/indicator/NY.GDP.MKTP.CD).
 
 ```{code-cell} ipython3
-path = '_static/lecture_specific/observed_distributions/gdp_by_country_2025.csv'
 url = ('https://raw.githubusercontent.com/jstac/py_for_ds_public/main/lectures/'
-       + path)
-
-# use the copy stored with this book if there is one, and otherwise download it
-gdp = pd.read_csv(path if os.path.exists(path) else url)
+       '_static/lecture_specific/observed_distributions/gdp_by_country_2025.csv')
+gdp = pd.read_csv(url)
 gdp.head()
 ```
 
@@ -762,6 +757,7 @@ So the LLN is the basic reason that data can teach us about distributions.
 
 It has two conditions, independence and a finite mean, and we consider each in turn.
 
+(observed_distributions:independence)=
 ### The role of independence
 
 The convergence above is not automatic.
@@ -1236,16 +1232,12 @@ Nothing here tells us that the winning class is a good description of the data -
 
 As a second application, let's see how the normal distribution fares with data that take both signs, so that classes on $(0, \infty)$ are not available.
 
-We look at the monthly return on Amazon shares between 2000 and 2024, measured as the percent change in the share price over each month, using closing prices from [Yahoo Finance](https://finance.yahoo.com/quote/AMZN/history/) that are adjusted for stock splits.
+We look at the monthly return on Amazon shares from January 2000 to December 2023, measured as the percent change in the share price over each month, using closing prices from [Yahoo Finance](https://finance.yahoo.com/quote/AMZN/history/) that are adjusted for stock splits.
 
 ```{code-cell} ipython3
-path = '_static/lecture_specific/observed_distributions/amazon_monthly_close.csv'
 url = ('https://raw.githubusercontent.com/jstac/py_for_ds_public/main/lectures/'
-       + path)
-
-# use the copy stored with this book if there is one, and otherwise download it
-prices = pd.read_csv(path if os.path.exists(path) else url,
-                     index_col='date', parse_dates=True)['close']
+       '_static/lecture_specific/observed_distributions/amazon_monthly_close.csv')
+prices = pd.read_csv(url, index_col='date', parse_dates=True)['close']
 returns = prices.pct_change().dropna() * 100
 ```
 
@@ -1291,7 +1283,7 @@ In other words, both tails of the data are heavier than the normal distribution 
 
 The failure is in the tails, and the tails are precisely what a study of asset returns cares about, since they contain the large losses.
 
-The Q-Q plot also suggests a remedy, which is to try a class with heavier tails, as we do in {doc}`mle_intro`.
+The Q-Q plot also suggests a remedy, which is to try a class with heavier tails, as we do in {doc}`heavy_tails`, using the method of {doc}`mle_intro`.
 
 ## Exercises
 

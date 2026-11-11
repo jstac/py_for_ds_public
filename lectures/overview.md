@@ -512,7 +512,7 @@ Such coding is straightforward for LLMs.
 As a result, basic Python skills are *far less important* than they were a few
 years ago, and they will be even less important in the future.
 
-In this course, we will aim to at least read basic Python code as well, although we will not need to write it.
+In this course we aim to read basic Python code, but not to write it from scratch.
 
 At the same time, *conceptual understanding* of data science and the foundations
 of statistics is essential for

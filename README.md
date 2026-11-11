@@ -6,7 +6,7 @@ https://jstac.github.io/py_for_ds_public/
 Each push to `main` builds and publishes the site. To build locally:
 
 ```bash
-jb build lectures --path-output ./
+jb build lectures
 ```
 
 Adapted from QuantEcon lectures by Thomas J. Sargent and John Stachurski. Licensed

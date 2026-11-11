@@ -35,7 +35,6 @@ We use these imports.
 
 ```{code-cell} ipython3
 import json
-import os
 import urllib.request
 
 import jax
@@ -518,16 +517,11 @@ mystnb:
     name: japan_map
 tags: [hide-input]
 ---
-path = '_static/lecture_specific/toolkit/japan_prefectures.geojson'
 url = ('https://raw.githubusercontent.com/jstac/py_for_ds_public/main/lectures/'
-       + path)
+       '_static/lecture_specific/toolkit/japan_prefectures.geojson')
 
-if os.path.exists(path):
-    with open(path) as f:
-        japan = json.load(f)
-else:
-    with urllib.request.urlopen(url) as f:
-        japan = json.load(f)
+with urllib.request.urlopen(url) as f:
+    japan = json.load(f)
 
 polygons, populations, centers = [], [], {}
 

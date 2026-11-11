@@ -21,4 +21,5 @@ Topics:
 
 * Heavy tails in economic data
 * Failure of the law of large numbers
+* Fitting heavy-tailed returns by maximum likelihood
 * Lorenz curves, Gini coefficients and top shares

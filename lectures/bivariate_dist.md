@@ -16,21 +16,19 @@ kernelspec:
 ```{index} single: Bivariate Distributions
 ```
 
-The lectures {doc}`prob_dist` and {doc}`observed_distributions` study a single variable at a time (e.g., a distribution of house prices).
+So far we have studied one variable at a time, such as the distribution of house prices, in {doc}`prob_dist`, {doc}`observed_distributions` and {doc}`mle_intro`.
 
 Often we are interested in how two variables relate to each other.
 
 For example, do larger houses tend to sell for more?
 
-In this lecture we study joint distributions and correlation, and then fit a line through data using regression.
+In this lecture we study joint distributions and correlation, and then fit a line through data using [simple linear regression](https://en.wikipedia.org/wiki/Simple_linear_regression).
 
 We end with a warning about what such a line can and cannot tell us.
 
 We use the following imports:
 
 ```{code-cell} ipython3
-import os
-
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -41,7 +39,7 @@ import seaborn as sns
 np.set_printoptions(legacy='1.25')   # print scalars as plain numbers
 ```
 
-To motivate what follows, let's look at the sale prices and floor areas of the Ames houses that we studied in {doc}`observed_distributions`.
+To motivate what follows, here is a [scatter plot](https://en.wikipedia.org/wiki/Scatter_plot) of the sale prices and floor areas of the Ames houses that we studied in {doc}`observed_distributions`.
 
 ```{code-cell} ipython3
 ---
@@ -88,6 +86,10 @@ Let's build an example from the house price data.
 
 Let $X = 1$ if a house's floor area is above the sample mean and $X=0$ otherwise, and define $Y$ the same way for price.
 
+In the code below, `area > area.mean()` gives `True` or `False` for each house, and `astype(int)` converts these to 1 and 0.
+
+The pandas function `crosstab` then counts the houses with each combination of $X$ and $Y$, and `normalize=True` turns the counts into fractions.
+
 ```{code-cell} ipython3
 X = (area > area.mean()).astype(int)
 Y = (price > price.mean()).astype(int)
@@ -98,8 +100,6 @@ joint
 ```
 
 Each cell is the fraction of houses with that combination of $X$ and $Y$.
-
-Around 48% of houses have both below-mean floor area and below-mean price.
 
 Given a joint distribution, we can recover the distribution of $X$ on its own by summing out $Y$:
 
@@ -128,31 +128,131 @@ For that we need the joint distribution.
 
 Some variables are continuous rather than discrete.
 
-The continuous analog is the joint density $p(x,y)$, a nonnegative function on $\mathbb R^2$ with
+For a continuous pair $(X, Y)$, the joint distribution is described by a joint density $p(x, y)$, which we can picture as a surface over the $(x, y)$ plane.
+
+The probability that $(X, Y)$ lands in a given region is the volume under this surface over that region, just as, for a single variable, a probability is an area under the density.
+
+As in the discrete case, we can recover the density of $X$ on its own, called the marginal density, from the joint density.
+
+```{admonition} Details: joint and marginal densities
+:class: dropdown
+
+A joint density is a nonnegative function $p$ on $\mathbb R^2$ with
 
 $$
-\int_{\mathbb R} \int_{\mathbb R} p(x,y) \, dx \, dy = 1
+\int_{-\infty}^\infty \int_{-\infty}^\infty p(x,y) \, dx \, dy = 1
 $$
 
-We say that $(X,Y)$ has joint density $p$ if, for every region $A \subset \mathbb R^2$,
+We say that $(X,Y)$ has joint density $p$ if, for every region $A$ in the plane,
 
 $$
 \mathbb P\{(X,Y) \in A\} = \iint_A p(x,y) \, dx \, dy
 $$
 
-Marginal densities come from integrating out the other variable:
+Marginal densities come from integrating out the other variable, in place of the sum in the discrete case:
 
 $$
 p_X(x) = \int_{-\infty}^\infty p(x,y) \, dy
 $$
+```
 
+## Independence and correlation
+
+$X$ and $Y$ are [independent](https://en.wikipedia.org/wiki/Independence_(probability_theory)) if the joint distribution is the product of the marginals:
+
+$$
+p(x,y) = p_X(x) \, p_Y(y) \qquad \text{for all } x, y
+$$
+
+Independence means that learning the value of $X$ tells us nothing about $Y$.
+
+We have already relied on this idea, informally when we discussed {ref}`the role of independence <observed_distributions:independence>` in {doc}`observed_distributions`, and through the IID assumption in {doc}`mle_intro`.
+
+For example, $X$ and $Y$ in our house table are not independent.
+
+To see this, consider the houses with below-mean floor area and below-mean price, which is the case $x = 0$ and $y = 0$.
+
+Here is $p(0, 0)$, followed by the product of the marginals $p_X(0) \, p_Y(0)$.
+
+```{code-cell} ipython3
+joint.loc[0, 0], p_X[0] * p_Y[0]
+```
+
+About 48% of houses are in this case, while independence would require about 34%.
+
+So $X$ and $Y$ are not independent, as we would expect, since larger houses tend to be more expensive.
+
+Independence is a yes-or-no property: it does not tell us how strong a relationship is.
+
+To measure the strength and direction of dependence, we use the [covariance](https://en.wikipedia.org/wiki/Covariance)
+
+$$
+\mathrm{Cov}(X,Y) = \mathbb E \left[ (X - \mu_X)(Y - \mu_Y) \right]
+$$
+
+where $\mu_X = \mathbb E[X]$ and $\mu_Y = \mathbb E[Y]$ are the means of $X$ and $Y$.
+
+The covariance is positive when $X$ and $Y$ tend to be above their means together, and negative when one tends to be above its mean while the other is below.
+
+If $X$ and $Y$ are independent, then $\mathrm{Cov}(X,Y) = 0$.
+
+```{note}
+The converse is false: zero covariance does not imply independence.
+
+It only rules out *linear* dependence, as {ref}`bivariate_ex2` shows.
+```
+
+The covariance is measured in the units of $X$ times the units of $Y$, which makes it hard to interpret.
+
+We therefore usually standardize it into the [correlation coefficient](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient)
+
+$$
+\rho = \mathrm{Corr}(X,Y) = \frac{\mathrm{Cov}(X,Y)}{\sigma_X \sigma_Y}
+$$
+
+Correlation is unit-free and always lies in $[-1, 1]$, with the extreme values attained only when $Y$ is an exact linear function of $X$.
+
+To estimate correlation from data $\{(x_i, y_i)\}$, we replace population quantities with sample ones, which gives the sample correlation
+
+$$
+r = \frac{1}{n} \sum_{i=1}^n
+    \left( \frac{x_i - \bar x}{s_x} \right)
+    \left( \frac{y_i - \bar y}{s_y} \right)
+$$
+
+where $\bar x$, $\bar y$, $s_x$ and $s_y$ are the sample means and standard deviations, as defined in {doc}`observed_distributions`.
+
+Here is a function that computes $r$ directly from this formula.
+
+(Setting `ddof=0` makes `std` divide by $n$, as in our definition of $s_x$ and $s_y$.)
+
+```{code-cell} ipython3
+def sample_corr(x, y):
+    "The sample correlation of x and y."
+    x_standardized = (x - x.mean()) / x.std(ddof=0)
+    y_standardized = (y - y.mean()) / y.std(ddof=0)
+    return np.mean(x_standardized * y_standardized)
+```
+
+Here is the correlation between floor area and price.
+
+```{code-cell} ipython3
+sample_corr(area, price)
+```
+
+Libraries also provide this calculation, for example as NumPy's `np.corrcoef`, which you will often see in code written by AI tools.
+
+(bivariate:normal)=
 ## The bivariate normal distribution
 
-Just as the {ref}`normal distribution <prob_dist:normal>` is the workhorse univariate distribution, the [bivariate normal distribution](https://en.wikipedia.org/wiki/Multivariate_normal_distribution) is the workhorse joint distribution.
+Just as the {ref}`normal distribution <prob_dist:normal>` is the most widely used distribution for a single variable, the [bivariate normal distribution](https://en.wikipedia.org/wiki/Multivariate_normal_distribution) is the most widely used joint distribution.
 
-It has five parameters: the two means $\mu_X, \mu_Y$, the two standard deviations $\sigma_X, \sigma_Y$, and the correlation $\rho \in (-1,1)$, which we define below.
+It has five parameters: the two means $\mu_X, \mu_Y$, the two standard deviations $\sigma_X, \sigma_Y$, and the correlation $\rho \in (-1,1)$ between $X$ and $Y$.
 
-Its density is
+```{admonition} Details: the bivariate normal density
+:class: dropdown
+
+The density of the bivariate normal distribution is
 
 $$
 p(x,y) = \frac{1}{2\pi \sigma_X \sigma_Y \sqrt{1-\rho^2}}
@@ -165,8 +265,11 @@ p(x,y) = \frac{1}{2\pi \sigma_X \sigma_Y \sqrt{1-\rho^2}}
 \right]
 \right)
 $$
+```
 
-SciPy provides this distribution as `scipy.stats.multivariate_normal`, which takes a mean and a covariance matrix.
+SciPy provides this distribution as `scipy.stats.multivariate_normal`, which takes the two means and a [covariance matrix](https://en.wikipedia.org/wiki/Covariance_matrix).
+
+The covariance matrix has the variances $\sigma_X^2$ and $\sigma_Y^2$ on its diagonal, and the covariance $\rho \sigma_X \sigma_Y$ in the other two entries.
 
 ```{code-cell} ipython3
 def bivariate_normal(μ_x, μ_y, σ_x, σ_y, ρ):
@@ -203,7 +306,7 @@ plt.show()
 
 This is the same kind of bell-shaped hill as the univariate normal density, built over a plane instead of a line.
 
-It is usually more convenient to look straight down at the hill and draw its contour lines, the way a topographic map does.
+It is usually more convenient to look straight down at the hill and draw its [contour lines](https://en.wikipedia.org/wiki/Contour_line), the way a topographic map does.
 
 ```{code-cell} ipython3
 ---
@@ -230,87 +333,7 @@ It can be shown that the marginal of $X$ is $N(\mu_X, \sigma_X^2)$ and the margi
 
 Neither marginal depends on $\rho$: the correlation describes how $X$ and $Y$ move *together*, and that information is lost when we look at either variable alone.
 
-## Independence and correlation
-
-$X$ and $Y$ are [independent](https://en.wikipedia.org/wiki/Independence_(probability_theory)) if the joint distribution is the product of the marginals:
-
-$$
-p(x,y) = p_X(x) \, p_Y(y) \qquad \text{for all } x, y
-$$
-
-Independence means that learning the value of $X$ tells us nothing about $Y$.
-
-Let's compare our house table with the table we would get if $X$ and $Y$ were independent.
-
-```{code-cell} ipython3
----
-mystnb:
-  figure:
-    caption: Actual joint versus independent joint
-    name: fig:bivariate-independence-heatmap
----
-independent_table = pd.DataFrame(np.outer(p_X, p_Y),
-                                 index=joint.index, columns=joint.columns)
-
-fig, axes = plt.subplots(1, 2, figsize=(9, 4))
-for ax, table, title in zip(axes, (joint, independent_table),
-                            ('actual joint', 'if independent')):
-    sns.heatmap(table, annot=True, fmt='.2f', cmap='viridis', cbar=False,
-                vmin=0, vmax=0.5, ax=ax)
-    ax.set_title(title)
-    ax.invert_yaxis()
-plt.show()
-```
-
-Around 48% of houses land in the (below, below) cell, well above the 34% that independence would predict.
-
-So $X$ and $Y$ are far from independent, as we would expect, since larger houses tend to be more expensive.
-
-Independence is an all-or-nothing property.
-
-To measure the strength and direction of dependence, we use the [covariance](https://en.wikipedia.org/wiki/Covariance)
-
-$$
-\mathrm{Cov}(X,Y) = \mathbb E \left[ (X - \mu_X)(Y - \mu_Y) \right]
-$$
-
-The covariance is positive when $X$ and $Y$ tend to be above their means together, and negative when one tends to be above its mean while the other is below.
-
-If $X$ and $Y$ are independent, then $\mathrm{Cov}(X,Y) = 0$.
-
-```{note}
-The converse is false: zero covariance does not imply independence.
-
-It only rules out *linear* dependence, as {ref}`bivariate_ex3` shows.
-```
-
-The covariance is measured in the units of $X$ times the units of $Y$, which makes it hard to interpret.
-
-We therefore usually standardize it into the [correlation coefficient](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient)
-
-$$
-\rho = \mathrm{Corr}(X,Y) = \frac{\mathrm{Cov}(X,Y)}{\sigma_X \sigma_Y}
-$$
-
-Correlation is unit-free and always lies in $[-1, 1]$, with the extreme values attained only when $Y$ is an exact linear function of $X$.
-
-For the bivariate normal, $\rho$ is exactly this correlation, and $\rho = 0$ implies independence, which is not true of distributions in general.
-
-To estimate correlation from data $\{(x_i, y_i)\}$, we replace population quantities with sample ones, which gives the sample correlation
-
-$$
-r = \frac{1}{n} \sum_{i=1}^n
-    \left( \frac{x_i - \bar x}{s_x} \right)
-    \left( \frac{y_i - \bar y}{s_y} \right)
-$$
-
-where $s_x$ and $s_y$ are the sample standard deviations.
-
-The function `np.corrcoef` returns a matrix of correlations, and we use `[0, 1]` to pull out the one between its two arguments.
-
-```{code-cell} ipython3
-np.corrcoef(area, price)[0, 1]
-```
+For the bivariate normal, $\rho = 0$ implies that $X$ and $Y$ are independent, which, as noted above, is not true of distributions in general.
 
 ## Building joint distributions
 
@@ -324,11 +347,40 @@ $$
 
 where $W$ is noise, independent of $X$, with mean zero and standard deviation $\sigma_W$.
 
-Since $W$ is independent of $X$, we have $\mathrm{Cov}(X,Y) = a \sigma_X^2$ and $\mathbb V[Y] = a^2 \sigma_X^2 + \sigma_W^2$, so that
+The correlation between $X$ and $Y$ is then
 
 $$
 \mathrm{Corr}(X,Y) = \frac{a \sigma_X}{\sqrt{a^2 \sigma_X^2 + \sigma_W^2}}
 $$
+
+```{admonition} Derivation: the correlation of X and Y
+:class: dropdown
+
+Since $W$ has mean zero, $\mu_Y = a \mu_X + b$, so $Y - \mu_Y = a (X - \mu_X) + W$.
+
+Hence
+
+$$
+\mathrm{Cov}(X,Y)
+= \mathbb E [ (X - \mu_X) (a (X - \mu_X) + W) ]
+= a \sigma_X^2 + \mathbb E [ (X - \mu_X) W ]
+= a \sigma_X^2
+$$
+
+where the last term is zero because $W$ is independent of $X$ and has mean zero.
+
+Similarly,
+
+$$
+\mathbb V[Y]
+= \mathbb E [ (a (X - \mu_X) + W)^2 ]
+= a^2 \sigma_X^2 + \sigma_W^2
+$$
+
+since the cross term $2 a \, \mathbb E [ (X - \mu_X) W ]$ is again zero.
+
+Dividing the covariance by $\sigma_X \sigma_Y = \sigma_X \sqrt{a^2 \sigma_X^2 + \sigma_W^2}$ gives the formula.
+```
 
 The correlation is driven entirely by the relative size of the signal $a X$ and the noise $W$.
 
@@ -358,7 +410,7 @@ axes[0].set_ylabel('y')
 plt.show()
 ```
 
-As the noise grows, the cloud of points fattens and the correlation falls, even though the underlying mechanism never changes.
+As the noise grows, the cloud of points spreads out and the correlation falls, even though the underlying mechanism never changes.
 
 If $X$ and $W$ are both normal, then the pair $(X,Y)$ built this way is bivariate normal.
 
@@ -392,11 +444,7 @@ g.set_axis_labels('x', 'y')
 plt.show()
 ```
 
-The histograms on the margins have the familiar bell shape, yet the joint distribution looks nothing like an elliptical cloud.
-
-It is concentrated on two crossing lines.
-
-For a genuinely bivariate normal pair, every linear combination $aX+bY$ is normal, but here $X+Y = 0$ whenever $|X| \geq 1$, which happens about a third of the time.
+The histograms on the margins have the familiar bell shape, yet the joint distribution is concentrated on two crossing lines, nothing like the elliptical contours of the bivariate normal.
 
 The lesson is that checking each variable individually is not enough: we need to look at the joint distribution directly.
 
@@ -420,7 +468,7 @@ $$
 \hat y_i = \alpha + \beta x_i
 $$
 
-that fits these data well.
+that fits these data well, where $\hat y_i$ is the value of $y$ that the line predicts at $x_i$.
 
 ### Fitting by hand
 
@@ -471,9 +519,7 @@ $$
 
 ### Optimizing
 
-Setting the partial derivatives of $C$ to zero gives two equations, which we solve in {ref}`bivariate_ex1`.
-
-The solution is
+The values of $\alpha$ and $\beta$ that minimize $C$ are
 
 $$
 \hat \beta
@@ -483,50 +529,93 @@ $$
 \hat \alpha = \bar y - \hat \beta \bar x
 $$
 
+```{admonition} Derivation: the OLS formulas
+:class: dropdown
+
+Setting the derivative of $C$ with respect to $\alpha$ to zero and dividing by $-2$ gives
+
+$$
+\sum_{i=1}^n (y_i - \alpha - \beta x_i) = 0
+$$
+
+Dividing by $n$ and rearranging gives $\alpha = \bar y - \beta \bar x$.
+
+Setting the derivative with respect to $\beta$ to zero and dividing by $-2$ gives
+
+$$
+\sum_{i=1}^n x_i (y_i - \alpha - \beta x_i) = 0
+$$
+
+Substituting for $\alpha$ gives
+
+$$
+\sum_{i=1}^n x_i (y_i - \bar y) = \beta \sum_{i=1}^n x_i (x_i - \bar x)
+$$
+
+Since $\sum_i (y_i - \bar y) = 0$ and $\sum_i (x_i - \bar x) = 0$, we can subtract $\bar x$ from $x_i$ on both sides without changing either sum, which gives the formula for $\hat \beta$.
+
+Dividing the numerator and denominator by $n$ shows that $\hat \beta = r s_x s_y / s_x^2 = r s_y / s_x$.
+```
+
 So the slope is the sample correlation $r$, rescaled by the units of the two variables.
 
 ```{code-cell} ipython3
-r = np.corrcoef(x, y)[0, 1]
-β_hat = r * y.std() / x.std()
+r = sample_corr(x, y)
+β_hat = r * y.std(ddof=0) / x.std(ddof=0)
 α_hat = y.mean() - β_hat * x.mean()
 α_hat, β_hat
 ```
 
-The function `np.polyfit` gives the same answer, with the slope first.
+NumPy's `np.polyfit(x, y, 1)` gives the same answer.
+
+It fits a polynomial of degree 1, which is a straight line, to the points $(x_i, y_i)$, and returns the slope first and then the intercept.
 
 ```{code-cell} ipython3
 np.polyfit(x, y, 1)
 ```
 
-Let's confirm that these values really do minimize the criterion, by varying one parameter at a time.
+Let's check this visually, by computing the sum of squared residuals $C(\alpha, \beta)$ on a grid of values and drawing its contour lines.
 
 ```{code-cell} ipython3
 ---
 mystnb:
   figure:
-    caption: The sum of squared residuals around the optimum
-    name: fig:ssr-curves
+    caption: Contours of the sum of squared residuals
+    name: fig:ssr-contours
 ---
 def ssr(α, β):
     return ((y - α - β * x)**2).sum()
 
-β_vals = np.linspace(20, 100, 200)
 α_vals = np.linspace(-500, 500, 200)
+β_vals = np.linspace(40, 90, 200)
+C_values = np.array([[ssr(α, β) for α in α_vals] for β in β_vals]) / 1000
 
-fig, axes = plt.subplots(1, 2, figsize=(10, 4))
-axes[0].plot(β_vals, [ssr(α_hat, β) for β in β_vals], lw=2)
-axes[0].axvline(β_hat, color='r')
-axes[0].set_xlabel(r'$\beta$')
-axes[0].set_ylabel('sum of squared residuals')
-axes[1].plot(α_vals, [ssr(α, β_hat) for α in α_vals], lw=2)
-axes[1].axvline(α_hat, color='r')
-axes[1].set_xlabel(r'$\alpha$')
+# draw contours at 5%, 20%, 50%, ... above the minimum value
+levels = ssr(α_hat, β_hat) / 1000 * np.array([1.05, 1.2, 1.5, 2, 3, 5, 8])
+
+fig, ax = plt.subplots()
+filled = ax.contourf(α_vals, β_vals, C_values, levels=levels,
+                     cmap='viridis_r', extend='both', alpha=0.8)
+lines = ax.contour(α_vals, β_vals, C_values, levels=levels,
+                   colors='black', linewidths=1)
+ax.clabel(lines, fmt='%.0f', fontsize=9)
+fig.colorbar(filled, ax=ax, label='sum of squared residuals (thousands)')
+ax.plot(α_hat, β_hat, 'ko', label=r'$(\hat \alpha, \hat \beta)$')
+ax.set_xlabel(r'$\alpha$')
+ax.set_ylabel(r'$\beta$')
+ax.legend()
 plt.show()
 ```
 
+The contours form nested ellipses around $(\hat \alpha, \hat \beta)$, so the sum of squared residuals rises as we move away from it in any direction.
+
+The ellipses are long and tilted because a larger intercept can be partly offset by a smaller slope, so many lines fit the data almost equally well along that direction.
+
 ### Regression and the conditional mean
 
-For a bivariate normal pair, the best guess of $Y$ given that $X = x$ is a straight line in $x$:
+The [conditional mean](https://en.wikipedia.org/wiki/Conditional_expectation) $\mathbb E[Y \mid X = x]$ is the average value of $Y$ among the cases where $X = x$, and it is our best guess of $Y$ when we know that $X = x$.
+
+For a {ref}`bivariate normal <bivariate:normal>` pair, the conditional mean is a straight line in $x$:
 
 $$
 \mathbb E[Y \mid X=x] = \mu_Y + \rho \frac{\sigma_Y}{\sigma_X} (x - \mu_X)
@@ -536,7 +625,7 @@ This has the same form as the OLS line, with $\hat \alpha + \hat \beta x = \bar 
 
 So OLS estimates the conditional mean when the data are bivariate normal, and it remains a useful summary of a linear relationship when they are not.
 
-Let's fit a line to the house data, in logs, which makes both variables closer to normal.
+Let's fit a line to the house data in logs, which makes both variables closer to normal, as we saw for prices in {numref}`fig:log-price-hist`.
 
 ```{code-cell} ipython3
 ---
@@ -558,11 +647,35 @@ ax.legend()
 plt.show()
 ```
 
-## Other criteria
+### Least squares and maximum likelihood
+
+In {doc}`mle_intro` we chose parameters by maximizing the likelihood, so it is natural to ask how least squares relates to that approach.
+
+Suppose that
+
+$$
+y_i = \alpha + \beta x_i + \epsilon_i
+$$
+
+where the errors $\epsilon_i$ are IID and normal, with mean zero and standard deviation $\sigma$.
+
+Then each $y_i$ is normal with mean $\alpha + \beta x_i$, and replacing $x_i - \mu$ by $y_i - \alpha - \beta x_i$ in the normal log likelihood {eq}`eq:normal_loglik` gives
+
+$$
+\ell(\alpha, \beta, \sigma)
+= - \frac{n}{2} \ln (2 \pi) - n \ln \sigma
+  - \frac{1}{2 \sigma^2} \sum_{i=1}^n (y_i - \alpha - \beta x_i)^2
+$$
+
+Only the last term depends on $\alpha$ and $\beta$, so, whatever the value of $\sigma$, maximizing $\ell$ over $\alpha$ and $\beta$ is the same as minimizing the sum of squared residuals $C(\alpha, \beta)$.
+
+So, when the errors are normal, ordinary least squares *is* maximum likelihood.
+
+### Other criteria
 
 Least squares is not the only reasonable criterion.
 
-Squaring means that a large residual counts very heavily, so a single unusual observation can pull the whole line towards it.
+Squaring means that a large residual counts very heavily, so a single unusual observation, called an [outlier](https://en.wikipedia.org/wiki/Outlier), can pull the whole line towards it.
 
 An alternative is [least absolute deviations](https://en.wikipedia.org/wiki/Least_absolute_deviations) (LAD), which minimizes
 
@@ -570,7 +683,7 @@ $$
 \sum_{i=1}^n | y_i - \alpha - \beta x_i |
 $$
 
-This criterion has no simple formula, so we minimize it numerically with SciPy.
+This criterion has no simple formula for its minimizer, so we minimize it numerically with SciPy's `minimize` function, as we did when {ref}`fitting the gamma distribution <mle_numerical>` in {doc}`mle_intro`.
 
 To compare the two, suppose that we add one unusual day to the ice-cream data: a hot day when the cart broke down and sales were only 100 dollars.
 
@@ -588,8 +701,7 @@ def lad(p):
     α, β = p
     return np.abs(y_new - α - β * x_new).sum()
 
-result = minimize(lad, x0=[0, 50], method='Nelder-Mead',
-                  options={'xatol': 1e-3, 'fatol': 1e-3, 'maxiter': 4000})
+result = minimize(lad, x0=[0, 50], method='Nelder-Mead')
 α_lad, β_lad = result.x
 β_ols, α_ols = np.polyfit(x_new, y_new, 1)
 
@@ -612,13 +724,13 @@ plt.show()
 
 One bad day pulls the OLS slope down from about 64 to about 49, while the LAD slope stays at about 62.5, as it was without the outlier.
 
-This is the same contrast as between the mean and the median in {doc}`observed_distributions`, and indeed LAD estimates the conditional median rather than the conditional mean.
+This is the same contrast as between the mean and the {ref}`median <observed_distributions:quantiles>` in {doc}`observed_distributions`, and indeed LAD estimates the conditional median rather than the conditional mean.
 
 ## An extended example
 
 Let's use regression on a question of policy interest: how does life expectancy vary with income across countries?
 
-The data come from [Our World in Data](https://ourworldindata.org/grapher/life-expectancy-vs-gdp-per-capita), and we use 2018, the most recent year available.
+The data come from [Our World in Data](https://ourworldindata.org/grapher/life-expectancy-vs-gdp-per-capita), and we use 2018, the most recent year in which this data set has both series.
 
 ```{code-cell} ipython3
 url = ('https://github.com/QuantEcon/data-lectures/raw/main/'
@@ -667,8 +779,8 @@ Taking logs makes it close to linear, so a straight line is a much better summar
 The correlation rises accordingly.
 
 ```{code-cell} ipython3
-np.corrcoef(gdp_life['gdppc'], gdp_life['life_expectancy'])[0, 1], \
-np.corrcoef(gdp_life['log_gdppc'], gdp_life['life_expectancy'])[0, 1]
+sample_corr(gdp_life['gdppc'], gdp_life['life_expectancy']), \
+sample_corr(gdp_life['log_gdppc'], gdp_life['life_expectancy'])
 ```
 
 ```{code-cell} ipython3
@@ -681,25 +793,28 @@ Notice how carefully that sentence is worded, since it describes a pattern acros
 
 ## Correlation and causality
 
-Suppose a survey finds that women who own horses live longer than women who don't.
+Suppose we find that, across days, ice-cream sales and drownings at the beach rise and fall together.
 
-It would be odd to prescribe horses for longevity.
+It would be odd to ban ice cream to prevent drownings.
 
-Owning a horse is expensive, so horse owners are likely to be wealthier and to have better health insurance, and those may be what matters.
+Both rise in hot weather, when more people buy ice cream and more people go swimming.
 
 A third factor that affects both variables like this is called a [confounder](https://en.wikipedia.org/wiki/Confounding), and it can produce a [correlation without any causal link](https://en.wikipedia.org/wiki/Correlation_does_not_imply_causation) between the two.
+
+Confounders are not always this easy to spot.
+
+Suppose a survey finds that women who own horses live longer than women who don't.
+
+Owning a horse is expensive, so horse owners are likely to be wealthier and to have better access to health care, and those may be what matters.
 
 Here is a real example, using data on the 50 US states and the District of Columbia (DC).
 
 For each one we have Donald Trump's percentage share of the 2024 presidential vote, from the Federal Election Commission, and life expectancy at birth in 2021, from the US National Center for Health Statistics.
 
 ```{code-cell} ipython3
-path = '_static/lecture_specific/bivariate_dist/state_votes_life_expectancy.csv'
 url = ('https://raw.githubusercontent.com/jstac/py_for_ds_public/main/lectures/'
-       + path)
-
-# use the copy stored with this book if there is one, and otherwise download it
-states = pd.read_csv(path if os.path.exists(path) else url)
+       '_static/lecture_specific/bivariate_dist/state_votes_life_expectancy.csv')
+states = pd.read_csv(url)
 states.head()
 ```
 
@@ -728,8 +843,8 @@ DC sits far to the left of everything else, and it is a single city rather than 
 ```{code-cell} ipython3
 no_dc = states[states['code'] != 'DC']
 
-r_all = np.corrcoef(states['trump_share'], states['life_expectancy'])[0, 1]
-r_no_dc = np.corrcoef(no_dc['trump_share'], no_dc['life_expectancy'])[0, 1]
+r_all = sample_corr(states['trump_share'], states['life_expectancy'])
+r_no_dc = sample_corr(no_dc['trump_share'], no_dc['life_expectancy'])
 slope, intercept = np.polyfit(no_dc['trump_share'], no_dc['life_expectancy'], 1)
 
 r_all, r_no_dc, slope
@@ -768,56 +883,14 @@ Moreover, each point is a whole state, so the figure says nothing directly about
 
 Drawing conclusions about individuals from group data like this is called the [ecological fallacy](https://en.wikipedia.org/wiki/Ecological_fallacy).
 
-Learning about causes takes more than a strong correlation: it takes a research design, such as a randomized trial, that rules out explanations like these.
+Learning about causes takes more than a strong correlation: it takes a research design, such as a [randomized controlled trial](https://en.wikipedia.org/wiki/Randomized_controlled_trial), that rules out explanations like these.
+
+As discussed in {doc}`overview`, some policy questions need only a good prediction, while others need causal evidence of this kind {cite}`kleinberg2015prediction`.
 
 ## Exercises
 
 ```{exercise-start}
 :label: bivariate_ex1
-```
-
-Derive the OLS formulas given above, by setting the partial derivatives of $C(\alpha, \beta)$ to zero.
-
-```{exercise-end}
-```
-
-```{solution-start} bivariate_ex1
-:class: dropdown
-```
-
-Setting the derivative with respect to $\alpha$ to zero and dividing by $-2$ gives
-
-$$
-\sum_{i=1}^n (y_i - \alpha - \beta x_i) = 0
-$$
-
-Dividing by $n$ and rearranging gives $\alpha = \bar y - \beta \bar x$.
-
-Setting the derivative with respect to $\beta$ to zero and dividing by $-2$ gives
-
-$$
-\sum_{i=1}^n x_i (y_i - \alpha - \beta x_i) = 0
-$$
-
-Substituting for $\alpha$ gives
-
-$$
-\sum_{i=1}^n x_i (y_i - \bar y) = \beta \sum_{i=1}^n x_i (x_i - \bar x)
-$$
-
-Since $\sum_i (y_i - \bar y) = 0$ and $\sum_i (x_i - \bar x) = 0$, we can subtract $\bar x$ from $x_i$ on both sides without changing either sum, which gives
-
-$$
-\hat \beta = \frac{\sum_{i=1}^n (x_i - \bar x)(y_i - \bar y)}{\sum_{i=1}^n (x_i - \bar x)^2}
-$$
-
-Dividing the numerator and denominator by $n$ shows that this equals $r s_x s_y / s_x^2 = r s_y / s_x$.
-
-```{solution-end}
-```
-
-```{exercise-start}
-:label: bivariate_ex2
 ```
 
 You ask an AI tool how much life expectancy rises with GDP per capita, using the `gdp_life` data above, and it returns the code below.
@@ -837,7 +910,7 @@ Is the slope of one regression simply the inverse of the slope of the other?
 ```{exercise-end}
 ```
 
-```{solution-start} bivariate_ex2
+```{solution-start} bivariate_ex1
 :class: dropdown
 ```
 
@@ -859,7 +932,7 @@ In fact their product is $r^2$, so they would be inverses only if the points lay
 ```
 
 ```{exercise-start}
-:label: bivariate_ex3
+:label: bivariate_ex2
 ```
 
 Let $X$ be standard normal and let $Y = X^2$.
@@ -873,7 +946,7 @@ What does this tell us about reading a correlation close to zero?
 ```{exercise-end}
 ```
 
-```{solution-start} bivariate_ex3
+```{solution-start} bivariate_ex2
 :class: dropdown
 ```
 
@@ -887,7 +960,7 @@ ax.set_xlabel('x')
 ax.set_ylabel('y')
 plt.show()
 
-np.corrcoef(x_sim, y_sim)[0, 1]
+sample_corr(x_sim, y_sim)
 ```
 
 The correlation is close to zero, and indeed the population covariance is $\mathbb E[X^3] = 0$.

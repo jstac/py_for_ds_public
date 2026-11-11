@@ -338,6 +338,24 @@ directly from the PMF, using the expressions given above.
 Check that your answers agree with `u.mean()` and `u.var()`. 
 ```
 
+```{solution-start} prob_ex1
+:class: dropdown
+```
+
+Here is one solution:
+
+```{code-cell} ipython3
+S = np.arange(1, n+1)
+mean = np.sum(S * u.pmf(S))
+var = np.sum((S - mean)**2 * u.pmf(S))
+mean, var
+```
+
+These agree with `u.mean()` and `u.var()`, and with the formulas $(n+1)/2 = 5.5$ and $(n^2 - 1)/12 = 8.25$.
+
+```{solution-end}
+```
+
 
 ### Bernoulli distribution
 
@@ -456,12 +474,12 @@ plt.show()
 ```
 
 ```{exercise}
-:label: prob_ex3
+:label: prob_ex2
 
 Using `u.pmf`, check that our definition of the CDF given above calculates the same function as `u.cdf`.
 ```
 
-```{solution-start} prob_ex3
+```{solution-start} prob_ex2
 :class: dropdown
 ```
 
@@ -564,7 +582,7 @@ mystnb:
     name: fig:poisson-pmf
 ---
 fig, ax = plt.subplots()
-S = np.arange(n)
+S = np.arange(20)
 ax.plot(S, u.pmf(S), linestyle='', marker='o', alpha=0.8, ms=4)
 ax.vlines(S, 0, u.pmf(S), lw=0.2)
 ax.set_xticks(S)

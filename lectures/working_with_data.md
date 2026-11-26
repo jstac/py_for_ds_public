@@ -72,15 +72,27 @@ Let's start with Series.
 
 We begin by creating a series from a Python dictionary.
 
-The keys are the ticker symbols of four listed companies, and the values are made-up daily returns on their shares, in percent.
+The keys of the dictionary are the ticker symbols of four listed companies, and the values are made-up daily returns on their shares, in percent.
 
 ```{code-cell} ipython3
 returns = {'AMZN': 1.2, 'AAPL': -0.7, 'MSFT': 0.4, 'GOOG': -1.5}
+type(returns)
+```
+
+Now let's convert it to a series.
+
+```{code-cell} ipython3
 s = pd.Series(returns, name='daily returns')
+type(s)
+```
+
+Let's inspect it:
+
+```{code-cell} ipython3
 s
 ```
 
-The keys have become the *index* of the series.
+The keys of the dictionary have become the *index* of the series.
 
 Let's compare this with a NumPy array containing the same numbers.
 
@@ -191,7 +203,7 @@ s
 ```{index} single: Pandas; DataFrames
 ```
 
-While a `Series` is a single column of data, a `DataFrame` is several columns, one for each variable.
+While a `Series` is a single column of data, a `DataFrame` is multiple columns, one for each variable.
 
 It is used to manage and analyze data that are naturally viewed as rows and columns. 
 
@@ -204,7 +216,7 @@ The numbers are for illustration only, since they do not match any downloadable 
 The dataset contains the following indicators 
 
 | Variable Name | Description |
-| :-: | :-: |
+| :-- | :-- |
 | POP | Population (in thousands) |
 | tcgdp | GDP (millions of international dollars) |
 | cc | Consumption Share of GDP Per Capita (%) |
@@ -416,22 +428,21 @@ df.POP >= 20000
 
 In this case, `df[___]` takes a series of boolean values and only returns rows with the `True` values.
 
-Take one more example,
+Conditions can be combined with `&`, which means "and", as long as each one is wrapped in parentheses.
+
+For example, here are the countries with a population of at least 20 million and a consumption share of at least 70%
 
 ```{code-cell} ipython3
-df[df.index.isin(['Argentina', 'India', 'South Africa']) & (df.POP > 40000)]
+df[(df.POP >= 20000) & (df.cc >= 70)]
 ```
 
-In fact, there is another way of doing the same thing, with more natural syntax.
-
+There is another way of doing the same thing with slightly more natural syntax.
 
 ```{code-cell} ipython3
-df.query("country in ['Argentina', 'India', 'South Africa'] and POP > 40000")
+df.query("POP >= 20000 and cc >= 70")
 ```
 
 The string is a Python expression that pandas evaluates, when called with `df.query`.
-
-The syntax inside the string is quite easy to read.
 
 Here's another example.
 
@@ -441,7 +452,7 @@ Consider this arithmetic operation between different columns.
 df[(df.cc + df.cg >= 80) & (df.POP <= 20000)]
 ```
 
-It becomes more readable if we use `df.query`.
+We can make this a bit more readable if we use `df.query`.
 
 ```{code-cell} ipython3
 df.query("cc + cg >= 80 and POP <= 20000")
@@ -453,12 +464,10 @@ We can also use `df.query` to select the country with the largest consumption sh
 df.query("cc == cc.max()")
 ```
 
-When selecting rows and columns together, we typically use `.loc`.
-
-For example, in the following code the first argument is the condition and the second is the list of columns we want to return.
+To keep only some columns, we can follow the query with a list of column names.
 
 ```{code-cell} ipython3
-df.loc[(df.cc + df.cg >= 80) & (df.POP <= 20000), ['POP', 'tcgdp']]
+df.query("cc + cg >= 80 and POP <= 20000")[['POP', 'tcgdp']]
 ```
 
 We can save any selection to a file for further analysis.
@@ -625,6 +634,8 @@ df.fillna(df.mean())
 
 None of these calls changes `df`, since each one returns a new DataFrame.
 
+Filling in a missing value is a modeling choice, so any result computed from the filled data depends on that choice.
+
 Missing value imputation is a big area in data science involving various machine learning techniques.
 
 There are also more [advanced tools](https://scikit-learn.org/stable/modules/impute.html) in Python to impute missing values.
@@ -647,8 +658,10 @@ df
 
 The `population` variable is in thousands, let's revert to single units
 
+Since population is a count of people, we also round to whole numbers and use `astype(int)` to store them as integers
+
 ```{code-cell} ipython3
-df['population'] = df['population'] * 1e3
+df['population'] = (df['population'] * 1_000).round().astype(int)
 df
 ```
 
@@ -892,45 +905,24 @@ ax.axis('off')
 plt.show()
 ```
 
-### Silent failures
+```{note}
+The merge that lost the United States is an example of a silent failure: code that runs without any error or warning, but gives the wrong answer.
 
-Code that runs without an error message can still give the wrong answer.
+Silent failures are especially dangerous because nothing prompts us to look for them.
 
-The merge that lost the United States is one example.
+A few habits help to catch them.
 
-Here is another.
-
-Suppose that Argentina's population is missing, and that we fill the gap with the mean, just as we did for missing values above.
-
-```{code-cell} ipython3
-raw = pd.read_csv(url).set_index('country')
-raw.loc['Argentina', 'POP'] = np.nan
-filled = raw.fillna(raw.mean())
-
-# tcgdp is in millions and POP is in thousands
-gdp_percap = filled['tcgdp'] * 1e3 / filled['POP']
-
-comparison = df[['GDP percap']].copy()
-comparison['with imputed population'] = gdp_percap
-comparison
+* Look at the output, not just the code, and ask whether the numbers are plausible.
+* Try the code on a small case where you already know the answer.
+* Look for missing values (`NaN`) where none should be.
 ```
-
-Argentina's GDP per capita is now far too low, because India and the United States pull the mean population well above Argentina's true population.
-
-Nothing warned us: the code ran, the result looks like any other table, and no missing values remain to show that something was changed.
-
-Filling in a missing value is a modeling choice, and every number computed from that value inherits its error.
 
 ## Online data sources
 
 ```{index} single: Data Sources
 ```
 
-Someone has to collect every number that we analyze.
-
 Most data used in policy work is produced by national statistical agencies, central banks and international organizations, using surveys, censuses and administrative records such as tax filings.
-
-Before using a series, it is worth asking who produced it, how it was measured and whether it has been revised.
 
 Many of these sources can be read directly from Python.
 

@@ -11,22 +11,19 @@ kernelspec:
   name: python3
 ---
 
-# Introduction to Bayesian Methods
+# Bayesian Estimation and Uncertainty
 
-## Overview
+In {doc}`mle_intro` we estimated the default probability on a set of loans by maximum likelihood.
 
-In this lecture we study one of the most important ideas in statistics: how to
-update our beliefs about an unknown quantity as new data arrives.
+The result was a single number, and a natural next question is how sure we should be about it.
 
-The technique we will use is called **Bayesian updating**, named after [Thomas
-Bayes](https://en.wikipedia.org/wiki/Thomas_Bayes).
+In this lecture we study one answer to that question: [Bayesian inference](https://en.wikipedia.org/wiki/Bayesian_inference), named after [Thomas Bayes](https://en.wikipedia.org/wiki/Thomas_Bayes), which describes our uncertainty about an unknown quantity with a probability distribution and updates it as new data arrive.
 
 We start with a belief about some unknown number.
 
 As we observe data, we revise that belief in a way that is mathematically precise.
 
-The figure below illustrates the idea: we combine a **prior belief** with
-observed **data** to arrive at an **updated belief**.
+The figure below illustrates the idea: we combine a prior belief with observed data to arrive at an updated belief.
 
 ```{code-cell} ipython3
 :tags: [hide-input]
@@ -58,11 +55,11 @@ ax.axis('off')
 plt.show()
 ```
 
-We will develop these ideas through an example drawn from development
-finance: estimating the default rate on a new type of loan.
+We will develop these ideas through the loan example from {doc}`mle_intro`, now set in development finance: estimating the default rate on a new type of loan.
 
-Along the way we will meet conditional probability, Bayes' law, the Bernoulli
-and binomial distributions, and the beta distribution.
+Along the way we will meet conditional probability and Bayes' law, and use the Bernoulli, binomial and beta distributions from {doc}`prob_dist`.
+
+At the end of the lecture we discuss how to read the measures of uncertainty that appear in reports and papers, such as standard errors, confidence intervals and p-values.
 
 Let's begin by importing the libraries we need.
 
@@ -75,7 +72,7 @@ from scipy.stats import beta, binom
 
 ## Conditional probability
 
-Before we can talk about updating beliefs, we need to recall the idea of **conditional probability**.
+Before we can talk about updating beliefs, we need the idea of [conditional probability](https://en.wikipedia.org/wiki/Conditional_probability).
 
 ### Definition
 
@@ -93,6 +90,7 @@ The intuition is that learning $B$ has occurred restricts us to the world in whi
 
 Within that restricted world, we ask how likely $A$ is.
 
+(bayes:risky_borrowing)=
 ### Example: risky borrowing
 
 A bank classifies its borrowers as either *low risk* or *high risk*.
@@ -132,6 +130,9 @@ $$
 
 So observing a default raises our assessment that the borrower is high risk from 20% to about 67%.
 
+Notice also that $P(H \mid D) \approx 0.667$ is quite different from $P(D \mid H) = 0.40$.
+
+The order of the events in a conditional probability matters, a point we return to {ref}`at the end of the lecture <bayes:reading>`.
 
 ### Bayes' law
 
@@ -147,7 +148,7 @@ $$
     P(A \mid B)\, P(B) = P(A \cap B) = P(B \mid A)\, P(A).
 $$
 
-Dividing through by $P(B)$ gives **Bayes' law**:
+Dividing through by $P(B)$ gives [Bayes' law](https://en.wikipedia.org/wiki/Bayes%27_theorem):
 
 $$
     P(A \mid B) = \frac{P(B \mid A)\, P(A)}{P(B)}.
@@ -155,9 +156,9 @@ $$ (eq:bayes_law)
 
 In this setting, we call
 
-* $P(A)$ the **prior** — our belief about $A$ before seeing data,
-* $P(B \mid A)$ the **likelihood** — how probable the data $B$ is when $A$ is true, and
-* $P(A \mid B)$ the **posterior** — our updated belief about $A$ after seeing $B$.
+* $P(A)$ the [prior](https://en.wikipedia.org/wiki/Prior_probability), our belief about $A$ before seeing data,
+* $P(B \mid A)$ the [likelihood](https://en.wikipedia.org/wiki/Likelihood_function), how probable the data $B$ is when $A$ is true, and
+* $P(A \mid B)$ the [posterior](https://en.wikipedia.org/wiki/Posterior_probability), our updated belief about $A$ after seeing $B$.
 
 The denominator $P(B)$ is a normalizing constant that makes the posterior probabilities sum to one.
 
@@ -172,13 +173,13 @@ Bayes' law tells us how to convert $P(D \mid H)$, which was assumed to be known,
 
 Now we turn to our main example.
 
-A development bank is entering a new lending market — say, smallholder farmers in a region where no historical lending data exists.
+A development bank is entering a new lending market, say, smallholder farmers in a region where no historical lending data exists.
 
 The bank makes a series of small loans (microloans).
 
-Each loan either **defaults** or is **repaid**.
+Each loan either defaults or is repaid.
 
-We encode the outcome of loan $i$ as a random variable $Y_i$, where
+As in {doc}`mle_intro`, we encode the outcome of loan $i$ as a random variable $Y_i$, where
 
 $$
     Y_i =
@@ -198,19 +199,21 @@ $$
     P(Y_i = 0 \mid \theta) = 1 - \theta.
 $$
 
-A random variable of this form is called a **Bernoulli** random variable with parameter $\theta$.
+In other words, each $Y_i$ has the {doc}`Bernoulli distribution <prob_dist>` with parameter $\theta$.
 
-The catch is that the bank does **not** know $\theta$.
+The catch is that the bank does *not* know $\theta$.
 
 Since the market is new, $\theta$ is uncertain.
 
 At the same time, the bank has experience in similar markets, so it does not start from total ignorance.
 
-The Bayesian approach is to treat $\theta$ as a random quantity and describe our beliefs about it with a probability density $\pi$ on the interval $[0, 1]$.
+In {doc}`mle_intro` we treated $\theta$ as a fixed but unknown number, and estimated it from the data alone.
 
-This density is called the **prior**.
+The Bayesian approach is instead to describe our beliefs about $\theta$ with a probability density $\pi$ on the interval $[0, 1]$.
 
-One possible option for $\pi$ is to use a [beta distribution](https://en.wikipedia.org/wiki/Beta_distribution), whose density on $[0,1]$ is
+This density is called the prior.
+
+One possible option for $\pi$ is to use the {doc}`beta distribution <prob_dist>`, whose density on $[0,1]$ is
 
 $$
     \pi(\theta) = \frac{\theta^{a - 1} (1 - \theta)^{b - 1}}{B(a, b)},
@@ -220,17 +223,21 @@ $$
 
 for parameters $a > 0$ and $b > 0$.
 
-The denominator $B(a, b)$ is called the **beta function**, and it is simply the
-constant that makes the density integrate to one.
+The denominator $B(a, b)$ is called the [beta function](https://en.wikipedia.org/wiki/Beta_function), and it is simply the constant that makes the density integrate to one.
 
 For our purposes the important part is the shape, $\theta^{a-1}(1-\theta)^{b-1}$, which is all that depends on $\theta$.
 
 One nice property of the beta distribution is that, by varying $a$ and $b$, we can represent a wide range of beliefs.
 
-The four examples below range from "no idea at all" to at least some opinion as to whether $\theta$ is 
-likely to take a low or high value.
+The four examples below range from "no idea at all" to at least some opinion as to whether $\theta$ is likely to take a low or high value.
 
 ```{code-cell} ipython3
+---
+mystnb:
+  figure:
+    caption: Four beta priors for the default probability
+    name: fig:bayes-priors
+---
 θ_grid = np.linspace(0, 1, 500)
 plot_grid = np.linspace(0.001, 0.999, 500)   # avoids the spikes at the endpoints
 params = [(0.5, 0.5), (1, 1), (2, 5), (8, 3)]
@@ -246,13 +253,11 @@ plt.show()
 
 The shapes are strikingly different.
 
-$\text{Beta}(1, 1)$ is flat — it expresses complete ignorance, treating every default rate as equally likely.
+$\text{Beta}(1, 1)$ is flat: it expresses complete ignorance, treating every default rate as equally likely.
 
 $\text{Beta}(0.5, 0.5)$ piles weight near 0 and 1, a belief that the market is probably either very safe or very risky.
 
 $\text{Beta}(2, 5)$ leans toward low default rates, while $\text{Beta}(8, 3)$ leans toward high ones.
-
-
 
 ## A one-step update
 
@@ -260,15 +265,15 @@ Now suppose the bank observes the outcome of a single loan.
 
 Call this outcome $y \in \{0, 1\}$.
 
-We want to update the prior $\pi(\theta)$ into a **posterior** $\pi(\theta \mid y)$.
+We want to update the prior $\pi(\theta)$ into a posterior $\pi(\theta \mid y)$.
 
-The probability of $y$ given $\theta$ is 
+The probability of $y$ given $\theta$ is
 
 $$
     p(y \mid \theta) = \theta^{y} (1 - \theta)^{1 - y}.
 $$ (eq:bernoulli_lik)
 
-This formula (which is called the Bernoulli distribution) gives us the right numbers:
+This is the Bernoulli probability from {doc}`mle_intro`, and it gives us the right numbers:
 
 * The default outcome $y = 1$ yields $\theta^1 (1-\theta)^0 = \theta$, the probability of a default.
 * The repayment outcome $y = 0$ yields $\theta^0 (1-\theta)^1 = 1 - \theta$, the probability of repayment.
@@ -293,9 +298,7 @@ $$ (eq:bayes_update)
 
 This rule is valid for any $\theta$.
 
-Hence we can think of it as taking any prior density $\pi(\cdot)$ and any single
-observation $y$ and converting it into the posterior density $\pi(\cdot \mid y)$.
-
+Hence we can think of it as taking any prior density $\pi(\cdot)$ and any single observation $y$ and converting it into the posterior density $\pi(\cdot \mid y)$.
 
 ## Computing the update numerically
 
@@ -318,19 +321,15 @@ This prior was shown above.
 
 It puts most of its weight on default rates below 0.5, with a peak around 0.2, reflecting cautious optimism (most borrowers don't default) together with significant uncertainty.
 
-
 ### Normalizing constant
 
-Next we need to compute the constant in the denominator of {eq}`eq:bayes_density`,
-which is the integrated likelihood times the prior:
+Next we need to compute the constant in the denominator of {eq}`eq:bayes_density`, which is the integrated likelihood times the prior:
 
 $$
     c(y) := \int_0^1 p(y \mid t)\, \pi(t)\, dt .
 $$
 
-
-One general approach is to compute $c(y)$ numerically, using a technique
-such as the [trapezoidal rule](https://en.wikipedia.org/wiki/Trapezoidal_rule).
+One general approach is to compute $c(y)$ numerically, using a technique such as the [trapezoidal rule](https://en.wikipedia.org/wiki/Trapezoidal_rule).
 
 The idea of the trapezoidal rule is to
 
@@ -341,8 +340,13 @@ The idea of the trapezoidal rule is to
 The figure below illustrates this for the integrand $p(y \mid \theta)\, \pi(\theta)$ with $y = 1$, using a coarse grid so the trapezoids are visible.
 
 ```{code-cell} ipython3
-:tags: [hide-input]
-
+---
+mystnb:
+  figure:
+    caption: The trapezoidal rule on a coarse grid
+    name: fig:bayes-trapezoid
+tags: [hide-input]
+---
 fine = np.linspace(0, 1, 500)
 integrand = fine * beta.pdf(fine, a_0, b_0)        # θ^1 (1-θ)^0 × prior
 
@@ -396,6 +400,12 @@ def update(y, θ_grid):
 Let's start from our Beta(2, 5) prior and suppose that we observe a single default ($y = 1$).
 
 ```{code-cell} ipython3
+---
+mystnb:
+  figure:
+    caption: Prior and posterior after one default
+    name: fig:bayes-one-default
+---
 θ_grid = np.linspace(0, 1, 500)
 prior_vals = pi(θ_grid)
 posterior_vals = update(y=1, θ_grid=θ_grid)
@@ -416,6 +426,12 @@ This makes sense: a default is evidence that $\theta$ might be larger than we th
 If instead the loan had been repaid, the posterior would shift left.
 
 ```{code-cell} ipython3
+---
+mystnb:
+  figure:
+    caption: Prior and posterior after one repayment
+    name: fig:bayes-one-repayment
+---
 posterior_repaid = update(y=0, θ_grid=θ_grid)
 
 fig, ax = plt.subplots()
@@ -441,7 +457,7 @@ This produces a sequence of densities $\pi_0, \pi_1, \pi_2, \ldots$ that capture
 
 Let's simulate a stream of loan outcomes and watch the beliefs evolve.
 
-We will generate data from a "true" default rate $\theta^* = 0.15$, which the bank does not know.
+As in {doc}`mle_intro`, we will generate data from a "true" default rate $\theta^* = 0.15$, which the bank does not know.
 
 ```{code-cell} ipython3
 θ_true = 0.15
@@ -454,6 +470,12 @@ outcomes = (rng.random(n) < θ_true).astype(int)
 Now we iterate the grid update over these outcomes, recording the posterior at a sequence of stages and showing each in its own panel.
 
 ```{code-cell} ipython3
+---
+mystnb:
+  figure:
+    caption: The posterior as loans resolve
+    name: fig:bayes-iterate
+---
 snapshots = [0, 1, 2, 3, 5, 8, 12, 16, 20]   # 0 = prior
 
 # Iterate the grid update, saving the density at each snapshot
@@ -486,9 +508,9 @@ plt.show()
 
 Two things stand out.
 
-First, the posterior **concentrates** around the true value $\theta^* = 0.15$ as more loans resolve.
+First, the posterior concentrates around the true value $\theta^* = 0.15$ as more loans resolve.
 
-Second, the posterior becomes **tighter** — our uncertainty about $\theta$ steadily shrinks.
+Second, the posterior becomes tighter: our uncertainty about $\theta$ steadily shrinks.
 
 Early on, the prior has a strong influence on our beliefs.
 
@@ -498,16 +520,13 @@ As data accumulates, that influence fades and the data takes over.
 
 Let's make two additional observations regarding the model described above.
 
-The first shows that we can do the update steps above with pencil and paper in
-the special case of a beta prior.
+The first shows that we can do the update steps above with pencil and paper in the special case of a beta prior.
 
 The second observation concerns batch updating.
 
-
 ### A closed form: the beta prior
 
-The numerical updating rule provided above always works, regardless of our
-choice of prior.
+The numerical updating rule provided above always works, regardless of our choice of prior.
 
 But in the beta case we get a nice analytical approach as well.
 
@@ -522,9 +541,9 @@ $$
 
 The right-hand side has the form of another beta density.
 
-So if the prior is $\text{Beta}(a, b)$, the posterior is again a beta distribution — with updated parameters.
+So if the prior is $\text{Beta}(a, b)$, the posterior is again a beta distribution, with updated parameters.
 
-We say that the beta distribution is a **conjugate prior** for the Bernoulli likelihood.
+We say that the beta distribution is a [conjugate prior](https://en.wikipedia.org/wiki/Conjugate_prior) for the Bernoulli likelihood.
 
 The update rule for the parameters is very simple:
 
@@ -536,6 +555,12 @@ Let's verify that this closed form agrees with our numerical computation.
 We overlay the analytical $\text{Beta}(a_0 + 1, b_0)$ posterior on the grid posterior after one default.
 
 ```{code-cell} ipython3
+---
+mystnb:
+  figure:
+    caption: Numerical and closed-form posteriors after one default
+    name: fig:bayes-closed-form
+---
 closed_form = beta.pdf(θ_grid, a_0 + 1, b_0)
 
 fig, ax = plt.subplots()
@@ -549,11 +574,9 @@ plt.show()
 
 The two curves lie exactly on top of one another, confirming that our numerics and the closed form agree.
 
-
 ### The batch update via the binomial likelihood
 
-There is a second, equally natural way to think about the problem of belief
-updating given loan outcome data.
+There is a second, equally natural way to think about the problem of belief updating given loan outcome data.
 
 Instead of processing outcomes one at a time, suppose we wait and observe all $n$ outcomes $Y_1, \ldots, Y_n$ together.
 
@@ -565,7 +588,7 @@ $$
     k = \sum_{i=1}^n Y_i.
 $$
 
-The probability of observing exactly $k$ defaults out of $n$ loans is given by the **binomial** distribution:
+The probability of observing exactly $k$ defaults out of $n$ loans is given by the {doc}`binomial distribution <prob_dist>`:
 
 $$
     p(k \mid \theta) = \binom{n}{k} \theta^{k} (1 - \theta)^{n - k}.
@@ -586,7 +609,6 @@ $$
 $$
 
 In words: add the number of defaults to $a$, and add the number of repayments to $b$.
-
 
 ## Sequential and batch updates agree
 
@@ -626,9 +648,8 @@ When we replace $p(Y_i \mid \theta, Y_1, \ldots, Y_{i-1})$ by the single-outcome
 
 This is exactly the conditional independence that lets the batch likelihood factor into a product.
 
-So the assumption is doing the same work in both routes — it is just hidden in the sequential one.
+So the assumption is doing the same work in both routes; it is just hidden in the sequential one.
 ```
-
 
 ## From posterior to loan pricing
 
@@ -642,13 +663,13 @@ Let's discuss how this can be done.
 
 Suppose each loan has size 1, and the bank loses the full amount when a loan defaults.
 
-Then the **expected loss** on a new loan is just the probability of default.
+Then the expected loss on a new loan is just the probability of default.
 
-Given the data, our best estimate of that probability is the **posterior mean**.
+Given the data, our best estimate of that probability is the posterior mean.
 
 Recall that the posterior is $\text{Beta}(a + k,\ b + n - k)$.
 
-The [mean of a beta distribution](https://en.wikipedia.org/wiki/Beta_distribution) $\text{Beta}(\alpha, \beta)$ is $\alpha / (\alpha + \beta)$, so here
+The {doc}`mean of a beta distribution <prob_dist>` $\text{Beta}(\alpha, \beta)$ is $\alpha / (\alpha + \beta)$, so here
 
 $$
     \mathbb{E}[\theta \mid \text{data}] = \frac{a + k}{a + b + n}.
@@ -659,6 +680,12 @@ This is the number the bank should plug into its pricing: to break even, the int
 Let's track how the expected loss, and our uncertainty about it, evolve as loans resolve.
 
 ```{code-cell} ipython3
+---
+mystnb:
+  figure:
+    caption: Posterior distributions of the default rate as loans resolve
+    name: fig:bayes-violins
+---
 cum_defaults = np.cumsum(outcomes)
 loans = np.arange(1, n + 1)
 
@@ -736,6 +763,12 @@ $$
 Let's see how this break-even rate evolves as the loan book grows.
 
 ```{code-cell} ipython3
+---
+mystnb:
+  figure:
+    caption: The break-even interest rate as loans resolve
+    name: fig:bayes-rate
+---
 implied_rate = post_mean / (1 - post_mean)
 
 fig, ax = plt.subplots()
@@ -751,6 +784,187 @@ plt.show()
 Early on, with little data, the rate reflects the prior and is somewhat unstable.
 
 As loans resolve, it settles toward $\theta^* / (1 - \theta^*) \approx 0.176$, the rate the bank would charge if it knew the true default probability.
+
+## Measuring uncertainty
+
+The posterior tells us more than a single best estimate: its spread measures how uncertain we remain about $\theta$.
+
+In this section we ask how fast that uncertainty shrinks, how to summarize it in an interval, and how it relates to the measures of uncertainty that appear in reports and papers.
+
+### Posterior width and sample size
+
+A natural measure of the spread of the posterior is its standard deviation.
+
+The posterior $\text{Beta}(a + k,\ b + n - k)$ has parameters that sum to $a + b + n$, so the {doc}`variance formula for the beta distribution <prob_dist>` gives
+
+$$
+    \text{Var}[\theta \mid \text{data}]
+    = \frac{\hat\theta (1 - \hat\theta)}{a + b + n + 1},
+$$
+
+where $\hat\theta$ is the posterior mean.
+
+When $n$ is large compared to $a + b$, the posterior standard deviation is therefore close to
+
+$$
+    \sqrt{\frac{\hat\theta (1 - \hat\theta)}{n}}.
+$$ (eq:post_sd)
+
+So the posterior narrows in proportion to $1 / \sqrt{n}$.
+
+Let's check this against our simulated loan book, comparing the exact posterior standard deviation with $\sqrt{\theta^* (1 - \theta^*) / n}$.
+
+```{code-cell} ipython3
+---
+mystnb:
+  figure:
+    caption: Posterior standard deviation and the $1 / \sqrt{n}$ rate
+    name: fig:bayes-sd
+---
+post_sd = beta.std(a_n, b_n)
+
+fig, ax = plt.subplots()
+ax.plot(loans, post_sd, lw=2, label="posterior standard deviation")
+ax.plot(loans, np.sqrt(θ_true * (1 - θ_true) / loans), 'k:',
+        label=r"$\sqrt{\theta^* (1 - \theta^*) / n}$")
+ax.set_xlabel("number of loans observed")
+ax.set_ylabel("standard deviation")
+ax.legend()
+plt.show()
+```
+
+At first the posterior is narrower than the dotted curve, because the prior adds information, roughly as much as $a + b = 7$ extra loans.
+
+After a few dozen loans the data dominate, and the two curves are close.
+
+The $1 / \sqrt{n}$ rate has an important practical consequence: to halve our uncertainty, we need four times as much data.
+
+(bayes:credible)=
+### Credible intervals
+
+A convenient way to report the spread of a posterior is a [credible interval](https://en.wikipedia.org/wiki/Credible_interval), an interval that contains $\theta$ with a given posterior probability.
+
+For example, a 90% credible interval runs from the 5th to the 95th percentile of the posterior.
+
+We can compute these percentiles with `beta.ppf`, the {ref}`quantile function <prob_dist:quantile_function>` of the beta distribution.
+
+Here is the 90% credible interval after all 100 loans.
+
+```{code-cell} ipython3
+beta.ppf([0.05, 0.95], a_n[-1], b_n[-1])
+```
+
+The bank can now say that, given its prior and the data, the default rate lies in this interval with probability 0.9.
+
+The next figure shows how the interval evolves as loans resolve.
+
+```{code-cell} ipython3
+---
+mystnb:
+  figure:
+    caption: Posterior mean and 90% credible interval as loans resolve
+    name: fig:bayes-credible
+---
+lower, upper = beta.ppf([[0.05], [0.95]], a_n, b_n)
+
+fig, ax = plt.subplots()
+ax.fill_between(loans, lower, upper, alpha=0.3, label="90% credible interval")
+ax.plot(loans, post_mean, lw=2, label="posterior mean")
+ax.axhline(θ_true, color='k', ls=':', lw=1, label=r"true $\theta^*$")
+ax.set_xlabel("number of loans observed")
+ax.set_ylabel(r"$\theta$")
+ax.legend()
+plt.show()
+```
+
+The interval narrows as the posterior tightens, at the $1 / \sqrt{n}$ rate found above.
+
+The prior matters most when the sample is small: with only a few loans, the interval mostly reflects the prior, and a different prior would give a quite different interval (see {ref}`bayes_ex1`).
+
+(bayes:reading)=
+### Reading what others report
+
+Most reports and papers that you read will not report posteriors.
+
+Instead, they will usually report standard errors, confidence intervals and p-values, which come from the frequentist approach that we used in {doc}`mle_intro`.
+
+In that approach, $\theta$ is a fixed number and the estimate $\hat\theta = k / n$ is what varies, since a different sample of loans would give a different estimate.
+
+We saw this variation in the {ref}`simulations <mle_consistency>` in {doc}`mle_intro`.
+
+The [standard error](https://en.wikipedia.org/wiki/Standard_error) is the standard deviation of the estimate across these hypothetical repeated samples.
+
+For the default rate it is approximately $\sqrt{\hat\theta (1 - \hat\theta) / n}$, which is the same as the posterior standard deviation {eq}`eq:post_sd` when $n$ is large.
+
+A 95% [confidence interval](https://en.wikipedia.org/wiki/Confidence_interval) is usually computed as the estimate plus or minus 1.96 standard errors.
+
+The number 1.96 comes from the normal distribution, since the [central limit theorem](https://en.wikipedia.org/wiki/Central_limit_theorem) tells us that the estimate is approximately normally distributed when $n$ is large.
+
+Here is the 95% confidence interval from our 100 loans.
+
+```{code-cell} ipython3
+k = outcomes.sum()
+θ_hat = k / n
+se = np.sqrt(θ_hat * (1 - θ_hat) / n)
+θ_hat - 1.96 * se, θ_hat + 1.96 * se
+```
+
+For comparison, here is the 95% credible interval from a flat $\text{Beta}(1, 1)$ prior.
+
+```{code-cell} ipython3
+beta.ppf([0.025, 0.975], 1 + k, 1 + n - k)
+```
+
+The two intervals are similar, and they get closer as $n$ grows.
+
+But they mean different things.
+
+The credible interval is a statement about $\theta$: given the prior and the data, $\theta$ lies in the interval with probability 0.95.
+
+The confidence interval is a statement about the procedure: if we drew many samples and computed an interval from each one, about 95% of those intervals would contain $\theta$.
+
+Let's check this by simulation, drawing 10,000 samples of 100 loans each.
+
+```{code-cell} ipython3
+sim_rng = np.random.default_rng(seed=1)
+num_samples = 10_000
+
+k_sim = binom.rvs(n, θ_true, size=num_samples, random_state=sim_rng)
+θ_hat_sim = k_sim / n
+se_sim = np.sqrt(θ_hat_sim * (1 - θ_hat_sim) / n)
+covers = (θ_hat_sim - 1.96 * se_sim <= θ_true) & (θ_true <= θ_hat_sim + 1.96 * se_sim)
+covers.mean()
+```
+
+The fraction of intervals that contain $\theta^*$ is close to 95%, as the procedure promises.
+
+Any one interval either contains $\theta^*$ or it does not, and the procedure does not tell us which.
+
+The same reasoning lies behind the margin of error reported with opinion polls.
+
+```{note}
+A poll of 1,000 people that reports support of 50% "plus or minus 3 points" is giving a 95% confidence interval.
+
+The [margin of error](https://en.wikipedia.org/wiki/Margin_of_error) is 1.96 standard errors, and with $\hat\theta = 0.5$ and $n = 1000$ it is $1.96 \times \sqrt{0.5 \times 0.5 / 1000} \approx 0.03$.
+
+It measures only the uncertainty from sampling, and not, for example, the error that arises when the people who answer a poll differ from those who do not.
+```
+
+Finally, many reports state that a result is "statistically significant", with a [p-value](https://en.wikipedia.org/wiki/P-value) below 0.05.
+
+Suppose, for example, that a study finds that a training program for borrowers lowered the default rate, with a p-value of 0.03.
+
+The p-value is the probability of a result at least as extreme as the one observed, if the program in fact had no effect.
+
+In other words, it is a probability of the form $P(\text{data} \mid \text{no effect})$.
+
+It is *not* the probability that the program had no effect, which is $P(\text{no effect} \mid \text{data})$.
+
+We saw in the {ref}`risky borrowing example <bayes:risky_borrowing>` that these two kinds of conditional probability can be very different, and Bayes' law shows that the second one also depends on the prior.
+
+Note also that "significant" does not mean large or important.
+
+With enough data, even a very small effect can have a small p-value, so it is worth looking at the size of the estimated effect and its confidence interval, and not just at whether it is significant.
 
 ## Exercises
 
@@ -799,7 +1013,7 @@ The two estimates start far apart, reflecting the disagreement between the prior
 
 As loans accumulate, both are pulled toward the true value $\theta^* = 0.15$ and the gap between them shrinks.
 
-With enough data, the choice of prior barely matters — the data dominates.
+With enough data, the choice of prior barely matters: the data dominates.
 
 ```{solution-end}
 ```
@@ -810,9 +1024,8 @@ With enough data, the choice of prior barely matters — the data dominates.
 Suppose the bank starts with a $\text{Beta}(2, 5)$ prior and then observes 200 loans, of which 26 default.
 
 1. Compute the posterior mean default rate.
-2. Compute a 90% **credible interval** for $\theta$ — an interval that contains $\theta$ with posterior probability 0.90.
-
-For the credible interval, use the 5th and 95th percentiles of the posterior, available via `beta.ppf`.
+2. Compute a 95% {ref}`credible interval <bayes:credible>` for $\theta$.
+3. Compute the 95% confidence interval from the same data, and compare the two intervals.
 ```
 
 ```{solution-start} bayes_ex2
@@ -822,20 +1035,26 @@ For the credible interval, use the 5th and 95th percentiles of the posterior, av
 The posterior is $\text{Beta}(a_0 + k,\ b_0 + n - k)$ with $a_0 = 2$, $b_0 = 5$, $n = 200$ and $k = 26$.
 
 ```{code-cell} ipython3
-a_post = 2 + 26
-b_post = 5 + (200 - 26)
+n_loans, k_defaults = 200, 26
+a_post = 2 + k_defaults
+b_post = 5 + (n_loans - k_defaults)
 
-post_mean = a_post / (a_post + b_post)
-lower, upper = beta.ppf([0.05, 0.95], a_post, b_post)
+post_mean_200 = a_post / (a_post + b_post)
+lower, upper = beta.ppf([0.025, 0.975], a_post, b_post)
+
+θ_hat_200 = k_defaults / n_loans
+se_200 = np.sqrt(θ_hat_200 * (1 - θ_hat_200) / n_loans)
 
 print(f"Posterior: Beta({a_post}, {b_post})")
-print(f"Posterior mean default rate: {post_mean:.4f}")
-print(f"90% credible interval: ({lower:.4f}, {upper:.4f})")
+print(f"Posterior mean default rate: {post_mean_200:.4f}")
+print(f"95% credible interval: ({lower:.4f}, {upper:.4f})")
+print(f"95% confidence interval: ({θ_hat_200 - 1.96 * se_200:.4f}, "
+      f"{θ_hat_200 + 1.96 * se_200:.4f})")
 ```
 
-The bank's best estimate of the default rate is about 13.5%, and it is 90% sure that the true rate lies within the reported interval.
+The two intervals are similar, since 200 loans is enough for the data to dominate the prior.
 
-These two numbers — a point estimate and a measure of uncertainty — are exactly what is needed to price the loans.
+The credible interval is shifted slightly upward, because the $\text{Beta}(2, 5)$ prior has a mean of about 0.29, above the observed default rate of 0.13.
 
 ```{solution-end}
 ```

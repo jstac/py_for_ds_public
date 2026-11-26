@@ -1,0 +1,4 @@
+# Read by matplotlib when the lectures are executed during the build, which
+# runs each notebook in this directory. A higher resolution keeps figure text
+# sharp when the page scales images to 80% of the text width.
+figure.dpi: 200

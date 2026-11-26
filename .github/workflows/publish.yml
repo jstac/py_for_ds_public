@@ -35,8 +35,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: _build/.jupyter_cache
-          key: jupyter-cache-${{ hashFiles('lectures/**', 'environment.yml') }}
-          restore-keys: jupyter-cache-
+          key: jupyter-cache-v2-${{ hashFiles('lectures/**', 'environment.yml') }}
+          restore-keys: jupyter-cache-v2-
       - name: Build download notebooks
         shell: bash -l {0}
         run: jb build lectures --path-output ./ --builder=custom --custom-builder=jupyter

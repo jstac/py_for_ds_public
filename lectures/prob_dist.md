@@ -16,17 +16,16 @@ kernelspec:
 ```{index} single: Common Distributions
 ```
 
-In data science applications, we are often interested in data on a specific variable.
-
 In this lecture we give a quick introduction to probability distributions using Python.
 
 This lecture is the first of two.
 
-The second, {doc}`observed_distributions`, treats observed data --- sets of
-numbers that we measure or collect --- and its connection to the probability
-distributions studied here.
+The current lecture is mainly (but not entirely) theoretical.
 
-It also asks which probability distribution best describes a given data set.
+The second, {doc}`observed_distributions`, focuses more on observed data and its connection to probability
+distributions.
+
+We begin with some imports.
 
 ```{code-cell} ipython3
 import matplotlib.pyplot as plt
@@ -143,7 +142,7 @@ Here each $x_i$ is an age and $p(x_i)$ is the fraction of the population at that
 
 We say that a random variable $X$ has distribution $p$ if $X$ takes value $x_i$ with probability $p(x_i)$.
 
-That is,
+In symbols,
 
 $$ 
 \mathbb P\{X = x_i\} = p(x_i) \quad \text{for } i= 1, \ldots, n 
@@ -155,9 +154,7 @@ $$
 \mathbb{E}[X] = \sum_{i=1}^n x_i p(x_i)
 $$
 
-Expectation is also called the first moment of the distribution.
-
-We also refer to this number as the mean of the distribution (represented by) $p$.
+We also refer to this number as the mean or first moment of the distribution $p$.
 
 More generally, if $f$ is a function on $S$, then $f(X)$ is a random variable that takes the value $f(x_i)$ whenever $X$ takes the value $x_i$.
 
@@ -188,8 +185,6 @@ $$
 We often prefer the standard deviation to the variance because it is measured in the same units as $X$ itself.
 
 For example, if $X$ is a height in centimeters, then $\sigma$ is in centimeters, while the variance is in centimeters squared.
-
-This means that $\sigma$ can be read directly off the horizontal axis of a histogram of the data, as a measure of spread.
 
 Means and variances are special cases of moments.
 
@@ -225,9 +220,9 @@ $$
 
 Kurtosis measures how much probability mass sits far out in the tails.
 
-For *every* normal distribution, $K = 3$, regardless of $\mu$ and $\sigma$.
+For every normal distribution, $K = 3$, regardless of $\mu$ and $\sigma$.
 
-Since the normal distribution is such a useful benchmark, it is common to subtract 3 and work with the excess kurtosis
+Since the normal distribution is such a useful benchmark, it is common to subtract 3 and work with the **excess kurtosis**
 
 $$
 K - 3

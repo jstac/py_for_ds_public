@@ -85,13 +85,13 @@ x = np.zeros(1_000_000)    # An array of one million numbers
 x.nbytes / 1e6             # Memory used, in megabytes
 ```
 
-A table with 10 million rows and 50 columns of such numbers therefore needs about 4 gigabytes, which is a real fraction of a typical laptop's memory.
+A table with 10 million rows and 50 columns of such numbers therefore needs about 4 gigabytes.
 
-If your data do not fit in memory, your program will slow down dramatically or crash.
+If your data do not fit in memory, your program will probably crash.
 
 ### Accelerators
 
-An [accelerator](https://en.wikipedia.org/wiki/Hardware_acceleration) is a specialized chip that does certain calculations much faster than a CPU.
+An [accelerator](https://en.wikipedia.org/wiki/Hardware_acceleration) is a specialized chip that can do many calculations at once.
 
 The best-known type is the [graphics processing unit](https://en.wikipedia.org/wiki/Graphics_processing_unit) (GPU), originally built to draw images for computer games.
 
@@ -231,11 +231,11 @@ This has the form $A x = b$, and multiplying each row of $A$ by $x$ gives back o
 NumPy can now solve the system directly.
 
 ```{code-cell} ipython3
-A = np.array([[1, 1],
-              [1, -1]])
-b = np.array([10, 2])
+A = np.array([[1, 1],     # Coefficients of q + p = 10
+              [1, -1]])   # Coefficients of q - p = 2
+b = np.array([10, 2])     # Right-hand side
 
-np.linalg.solve(A, b)
+np.linalg.solve(A, b)     # Returns x = (q, p)
 ```
 
 So the quantity is 6 and the price is 4, which is where the two lines cross.
@@ -303,7 +303,7 @@ We need `block_until_ready` because JAX otherwise moves on to the next line whil
 
 Compare this with the NumPy timing above: at this size, JAX often wins even on a CPU.
 
-On an accelerator, the gap can be far larger: in one test on a desktop GPU, a system of this size took about 0.04 seconds, compared to 0.6 seconds for NumPy on that machine's CPU.
+On an accelerator, the gap can be far larger, with JAX solving a system of this size many times faster than NumPy on the same machine's CPU.
 
 These comparisons flatter JAX, since it uses lower-precision numbers by default, while NumPy uses higher precision.
 
@@ -558,7 +558,6 @@ plt.show()
 
 The dark region around Tokyo shows how concentrated the population is.
 
-Notice that large prefectures such as Hokkaido look important on a map even when they have relatively few people, which is a common way for maps to mislead.
 
 ## Networks
 
@@ -709,7 +708,7 @@ This view is called a [diff](https://en.wikipedia.org/wiki/Diff), where red line
       count = count + 1
 ```
 
-Here an AI has changed `>` to `>=`, a small edit that changes the answer, as we saw in {doc}`python_ai`.
+Here an AI has changed `>` to `>=`.
 
 If you do not like a change, then you can go back to the previous commit, which makes it safer to let an AI make large edits.
 

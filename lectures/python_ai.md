@@ -13,11 +13,15 @@ kernelspec:
 
 # Reading Python and Directing AI
 
-In this lecture we learn to read simple Python code, and to direct an AI tool that writes code for us.
+In this lecture we learn to read simple Python code, and to direct an AI tool
+that writes code for us.
 
-We will not write programs from scratch.
+Note that we will *not* learn to write programs from scratch.
 
-Instead, the aim is to look at short pieces of code, work out what they do, and notice when they do something other than what we asked for.
+AI tools can write simple data science scripts very easily.
+
+Instead, the aim is to look at short pieces of code, work out what they do, and
+notice when they do something other than what we asked for.
 
 Here is an example that uses a made-up table of household incomes in four regions.
 
@@ -44,12 +48,13 @@ for region, values in incomes.items():
     if m < threshold:
         below.append(region)
 
-print('Regions below the threshold:', below)
+print('Regions with mean income below the threshold:', below)
 ```
 
 Don't worry if this looks unfamiliar.
 
-By the end of the lecture you should be able to read every line.
+By the end of this course you should be able to read every line.
+
 
 ## Data types
 
@@ -66,8 +71,6 @@ x * y
 ```
 
 Text after `#` is a [comment](https://en.wikipedia.org/wiki/Comment_(computer_programming)), written for human readers.
-
-AI tools add many comments, and these are often the best place to start reading.
 
 Arithmetic mostly works as you would expect, with `*` for multiplication and `/` for division.
 
@@ -89,7 +92,7 @@ region
 Text that looks like a number is still text.
 
 ```{code-cell} ipython3
-'10' + '10'
+'10' + '10'   # Each '10' is a string
 ```
 
 Here `+` joins the two strings instead of adding them.
@@ -99,7 +102,8 @@ This is a common problem when data are loaded from a file, and no error message 
 You will also often see strings starting with `f`, which insert the value of a variable.
 
 ```{code-cell} ipython3
-f'The region is {region}'
+full_name = 'John Stachurski'
+f'My name is {full_name}'
 ```
 
 ### Lists
@@ -128,8 +132,10 @@ values[-1]
 We can also select a range of elements, where the last number in the range is not included.
 
 ```{code-cell} ipython3
-values[0:2]    # Elements 0 and 1, but not 2
+values[0:2]    # Elements 0 and 1, but not 2!
 ```
+
+I think of `0:2` as meaning "two elements of the list, starting from item 0".
 
 To add an element to the end of a list, we use `append`.
 
@@ -140,7 +146,7 @@ values
 
 ### Dictionaries
 
-A [dictionary](https://en.wikipedia.org/wiki/Associative_array) stores values under names, which are called keys.
+A [dictionary](https://en.wikipedia.org/wiki/Associative_array) stores values under names, which are called *keys*.
 
 ```{code-cell} ipython3
 means = {'north': 27.0, 'south': 19.0}
@@ -316,11 +322,11 @@ To loop over a dictionary, we use `items`, which gives us each key and value tog
 ```{code-cell} ipython3
 means = {'north': 27.0, 'south': 19.0, 'east': 14.0}
 
-for region, m in means.items():
-    print(region, m)
+for region, value in means.items():
+    print(region, value)
 ```
 
-AI tools often replace a simple loop with a one-line [list comprehension](https://en.wikipedia.org/wiki/List_comprehension).
+For simple loops we can also use a [list comprehension](https://en.wikipedia.org/wiki/List_comprehension).
 
 ```{code-cell} ipython3
 [v * 2 for v in [21, 27, 33]]
@@ -377,13 +383,15 @@ print([k * 2 for k in [1, 2, 3, 4] if k > 2])
 
 A [function](https://en.wikipedia.org/wiki/Function_(computer_programming)) is a named piece of code that takes some inputs and usually returns a result.
 
-We have already used `len`, `sum` and `print`, which are built into Python.
+We have already used `len`, `sum` and `print`, which are functions built into Python.
 
-Inputs are placed in parentheses, and some are given by name.
+Here's another built-in function:
 
 ```{code-cell} ipython3
 sorted([3, 1, 2], reverse=True)    # Sort from largest to smallest
 ```
+
+Here, as for all functions, inputs are placed in parentheses. Some are given by name.
 
 Other functions come from libraries, which we load using `import`.
 
@@ -395,13 +403,20 @@ math.sqrt(16)
 
 You will also see forms like `import numpy as np`, which gives the library a shorter name, so that its functions are written `np.something`.
 
+```{code-cell} ipython3
+import numpy as np
+
+np.std([1, 3, 5])  # Calculate the standard deviation of 1, 3, 5
+```
+
 ### Defining functions
 
 We can define our own functions using `def`.
 
 ```{code-cell} ipython3
 def mean(values):
-    return sum(values) / len(values)
+    s = sum(values)
+    return s / len(values)
 
 mean([1, 2, 3])
 ```
@@ -503,7 +518,7 @@ for region, values in incomes.items():
     if m < threshold:
         below.append(region)
 
-print('Regions below the threshold:', below)
+print('Regions with mean income below the threshold:', below)
 ```
 
 Here is what each part does.

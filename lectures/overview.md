@@ -24,15 +24,16 @@ and learning objectives.
 
 It is free and [open source](https://en.wikipedia.org/wiki/Open_source), so anyone can use, read and modify it at no cost.
 
-It is also [high level](https://en.wikipedia.org/wiki/High-level_programming_language), which means it was designed for readability (but not speed, which came later).
+It is also [high level](https://en.wikipedia.org/wiki/High-level_programming_language), which means it was designed for readability.
 
-The core language is small.
+The core language is deliberately kept small.
 
-Most of what we do in this course comes from [libraries](https://en.wikipedia.org/wiki/Library_(computing)):
+However, there are very extensive [libraries](https://en.wikipedia.org/wiki/Library_(computing)) that we can also use:
 
 * Packages of code that extend the core language
 * Some are for statistics / data science / AI
 * Some allow Python programs to run fast
+
 
 ### A short history
 
@@ -45,21 +46,24 @@ His aim was an easier way to do [system administration](https://en.wikipedia.org
 He took the name from [*Monty Python's Flying Circus*](https://en.wikipedia.org/wiki/Monty_Python), and announced the language publicly in February 1991.
 
 Over time, people who liked the language added scientific and numerical
-capabilities through libraries (code packages).
+capabilities through libraries.
 
 | Year | Project | Used for | Origin |
 |---|---|---|---|
-| 1995 | Numeric | Fast calculation with arrays (grids) of numbers | [Jim Hugunin](https://en.wikipedia.org/wiki/Jim_Hugunin) builds a package for multidimensional arrays |
+| 1995 | [Numeric](https://en.wikipedia.org/wiki/NumPy#Numeric) | Fast calculation with arrays of numbers | [Jim Hugunin](https://en.wikipedia.org/wiki/Jim_Hugunin) builds a package for multidimensional arrays |
+| 2000 | [Numarray](https://en.wikipedia.org/wiki/NumPy#Numarray) | Another array package | Created by the [Space Telescope Science Institute](https://en.wikipedia.org/wiki/Space_Telescope_Science_Institute) |
 | 2001 | [SciPy](https://scipy.org/) | Scientific and statistical routines | [Travis Oliphant](https://github.com/teoliphant), [Eric Jones](https://www.enthought.com/team/) and [Pearu Peterson](https://github.com/pearu) merge their scientific modules |
 | 2001 | [IPython](https://ipython.org/) | Running Python interactively | [Fernando Pérez](https://github.com/fperez), a graduate student, starts an improved interactive Python |
-| c. 2003 | [Matplotlib](https://matplotlib.org/stable/project/history.html) | Figures and plots | [John Hunter](https://en.wikipedia.org/wiki/John_D._Hunter), working on EEG (brain activity) data, wants MATLAB-style plots in Python |
+| 2003 | [Matplotlib](https://matplotlib.org/stable/project/history.html) | Figures and plots | [John Hunter](https://en.wikipedia.org/wiki/John_D._Hunter), working on EEG (brain activity) data, wants MATLAB-style plots in Python |
+| 2005 | [NetworkX](https://networkx.org/) | Analysis of graphs and networks | [Aric Hagberg](https://en.wikipedia.org/wiki/Aric_Hagberg), Dan Schult and Pieter Swart release a package begun in 2002 |
+| 2005 | [NumPy](https://numpy.org/) | A new multidimensional array package | [Travis Oliphant](https://en.wikipedia.org/wiki/Travis_Oliphant) unifies Numeric and Numarray |
 | 2006 | [NumPy](https://numpy.org/) 1.0 | Fast calculation with arrays of numbers | Oliphant combines the competing array libraries, including Numeric |
 | 2008 | [pandas](https://pandas.pydata.org/) | Tables of data | [Wes McKinney](https://github.com/wesm) starts it at AQR Capital Management, an investment firm {cite}`mckinney2022python` |
 | 2010 | [scikit-learn](https://scikit-learn.org/stable/about.html) | Machine learning | First public release, led by researchers at INRIA in France |
 | 2014 | [Jupyter](https://jupyter.org/) | Notebooks that mix code and text | The notebook grows out of IPython and comes to support many languages |
 | 2015 | [TensorFlow](https://research.google/blog/tensorflow-googles-latest-machine-learning-system-open-sourced-for-everyone/) | Deep learning | Google releases its machine learning system as open source |
 | 2017 | [PyTorch](https://soumith.ch/posts/2023/12/pytorch-design-origins/) | Deep learning | Public release of a Python successor to Torch, a library used through the [Lua](https://www.lua.org/) language |
-| 2022 | [ChatGPT](https://en.wikipedia.org/wiki/ChatGPT) | Writing text and code on request | [Large language models](https://en.wikipedia.org/wiki/Large_language_model) (LLMs) bring code generation to people who do not program |
+| 2018 | [JAX](https://docs.jax.dev/) | Fast array computing on CPUs and GPUs, with automatic differentiation | Google releases it as open source |
 
 
 We meet many of these libraries in {doc}`toolkit`.
@@ -239,17 +243,8 @@ Even in economics, which has many formal models, most of them are easily
 rejected along at least one dimension, so hypothesis testing is not necessarily
 the right paradigm.
 
-```{note}
-Some statisticians were making similar points.
 
-In 1962, [John Tukey](https://en.wikipedia.org/wiki/John_Tukey) called for a science of data analysis that went beyond mathematical statistics {cite}`tukey1962future`.
-
-In 1976, [George Box](https://en.wikipedia.org/wiki/George_E._P._Box) observed that "all models are wrong" {cite}`box1976science`.
-
-In 2001, [Leo Breiman](https://en.wikipedia.org/wiki/Leo_Breiman) contrasted two cultures: one models how the data were generated, while the other uses algorithms and judges them by how well they predict {cite}`breiman2001statistical`.
-```
-
-### Supply and demand
+### Changes on the supply side
 
 The groups listed above created a demand for new ways to learn from data.
 
@@ -269,7 +264,7 @@ Python's data libraries, including pandas and scikit-learn, appeared in those sa
 
 In this course, [data science](https://en.wikipedia.org/wiki/Data_science) means a collection of techniques and methods for generating knowledge, insights and forecasts from data, and for supporting decision making.
 
-The table below compares it with classical statistics, although the differences are ones of emphasis.
+The table below compares it with classical statistics
 
 | | Classical statistics | Data science |
 |---|---|---|
@@ -312,18 +307,17 @@ Their model identified image features that explain up to 75% of the variation in
 
 Most fishing vessels do not broadcast their positions, which makes illegal fishing hard to monitor.
 
-{cite:t}`park2020illuminating` studied the waters between the Koreas, Japan and Russia, using a neural network to identify fishing vessels in satellite images.
+{cite:t}`park2020illuminating` studied the waters between the Koreas, Japan and Russia, using machine learning to identify fishing vessels in satellite images.
 
 They find that more than 900 vessels of Chinese origin in 2017, and more than 700 in 2018, fished illegally in North Korean waters.
 
 Over those two years, the estimated catch was more than 164,000 tonnes of squid, worth more than $440 million.
 
-That is about as much as Japan and South Korea caught combined.
 
 
 ## Jupyter notebooks
 
-A [Jupyter notebook](https://en.wikipedia.org/wiki/Project_Jupyter) is a document that combines code, the results of running that code, and formatted text.
+A [Jupyter notebook](https://en.wikipedia.org/wiki/Project_Jupyter) is a document that combines code, output (the results of running that code), and formatted text.
 
 Tables and figures appear directly below the code that produced them.
 
@@ -343,10 +337,9 @@ Like Python, Jupyter is free and [open source](https://jupyter.org/about).
 
 Jupyter is an extremely popular platform for data science.
 
-* GitHub [reported](https://github.blog/news-insights/octoverse/octoverse-2024/) a 92% jump in notebook use in 2024, and linked this to data science, AI and academic work.
-* In the [2025 survey](https://survey.stackoverflow.co/2025/technology) by Stack Overflow, a question-and-answer site for programmers, 14.1% of respondents used Jupyter and 7% used Google Colab.
+For example, GitHub [reported](https://github.blog/news-insights/octoverse/octoverse-2024/) a 92% jump in notebook use in 2024, and linked this to data science, AI and academic work.
 
-Notebooks are also used for data analysis at leading technology firms, including Meta, Google, LinkedIn, Anthropic, Amazon and DeepMind.
+Notebooks are used for data analysis at leading technology firms, including Meta, Google, LinkedIn, Anthropic, Amazon and DeepMind.
 
 
 ### Two ways to run notebooks
@@ -367,7 +360,11 @@ A local installation is better if you plan to use Python regularly, or if you wo
 
 It is free to use, but you need a Google account.
 
-To open a lecture from this book, click the download icon at the top of the lecture page, go to Colab and choose File, then Upload notebook.
+To open a lecture from this book,
+
+1. click the download icon at the top of the lecture page to get the notebook file, 
+2. go to Colab and choose File,
+3. then Upload notebook.
 
 When you run a notebook, Colab lends you a temporary computer on its servers, and this period of use is called a session.
 
@@ -387,11 +384,8 @@ However, the two are not the same.
 | Sharing | Send the file | Share a link, as with Google Docs |
 | Interface | JupyterLab | Google's own design, with different menus and shortcuts |
 
-Two practical points follow.
 
-First, keep your own copy of anything you upload to or create on the server, since those files do not last.
-
-Second, using Colab means sending your code and data to Google, so think before uploading anything confidential.
+Remeber that using Colab means sending your code and data to Google, so be careful with confidential data.
 
 We return to that point {ref}`below <overview:confidentiality>`, when we discuss the role of AI.
 
@@ -509,20 +503,22 @@ This is because most of the code written for policy work will be relatively rout
 
 Such coding is straightforward for LLMs.
 
-As a result, basic Python skills are *far less important* than they were a few
+As a result, *basic Python skills are less important* than they were a few
 years ago, and they will be even less important in the future.
 
 In this course we aim to read basic Python code, but not to write it from scratch.
 
-At the same time, *conceptual understanding* of data science and the foundations
-of statistics is essential for
+At the same time, *conceptual understanding of data science and the foundations
+of statistics is essential*.
 
-* determining what is possible, given the questions and the data,
+We need these skills for
+
+* asking the right questions
 * deciding what is valuable, and
 * interacting with LLMs to complete analytical tasks.
 
 If you use AIs on data science tasks, you will soon conclude that you cannot manage them properly unless you
-understand the underlying concepts.
+understand the underlying statistical concepts.
 
 
 
@@ -554,8 +550,6 @@ Colab's AI features [carry a similar warning](https://research.google.com/colabo
 Business and API plans often offer more protection: for example, [OpenAI](https://help.openai.com/en/articles/8983130-what-is-the-chatgpt-enterprise-and-team-data-policy) and [Anthropic](https://privacy.claude.com/en/articles/7996868-is-my-data-used-for-model-training) do not use that data for training by default.
 
 Even so, your data has still left your computer, and these terms change, so check them yourself.
-
-The risk is real: in 2023, [Samsung restricted staff use of generative AI](https://www.bangkokpost.com/life/tech/2562014/samsung-bans-staff-use-of-ai-over-data-leak) after engineers reportedly pasted internal source code into ChatGPT.
 
 *What should not be uploaded.*
 
